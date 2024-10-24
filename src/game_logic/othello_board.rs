@@ -1,5 +1,3 @@
-use crate::Color;
-
 #[derive(Copy, Clone, Debug)]
 struct OthelloPiece{
     state: u8
@@ -16,17 +14,13 @@ impl OthelloPiece{
 }
 
 pub struct OthelloBoard{
-    piece_colors: (Color, Color),
     board_state: [[Option<OthelloPiece>; 8]; 8]
 }
 
 impl OthelloBoard{
-    pub fn new(piece_colors: (Color, Color)) -> Self {
+    pub fn new() -> Self {
         let empty_board = [[None; 8]; 8];
-        OthelloBoard {
-            piece_colors: piece_colors,
-            board_state: empty_board
-        }
+        OthelloBoard { board_state: empty_board }
     }
 
     pub fn set_piece(&mut self, rank: char, file: u8, which_player: u8) -> Result<(), &'static str> {

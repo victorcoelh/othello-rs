@@ -1,15 +1,18 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
-
-use othello_rs::game_logic::OthelloBoard;
-use othello_rs::Color;
-use othello_rs::gui::build_game_window;
+use othello_rs::game_controller::GameController;
+use othello_rs::networking::Message;
+use othello_rs::gui::game_window::build_game_window;
 
 fn main() -> eframe::Result<()> {
-    let player_colors: (Color, Color) = ((255, 255, 255), (0, 0, 0));
-    let mut board = OthelloBoard::new(player_colors);
+    let message = Message::TextMessage("I love cock".to_string());
+    let decoded = Message::from_bytes(&message.to_bytes());
 
-    board.set_piece('b', 4, 0).unwrap();
-    board.print_board();
+    match decoded.unwrap() {
+        Message::TextMessage(text) => println!("{text}"),
+        _ => panic!("nah")
+    }
 
-    build_game_window()
+    let controller = GameController::new();
+    build_game_window(controller)?;
+
+    Ok(())
 }

@@ -1,38 +1,45 @@
-use eframe::egui::{self, Color32, Stroke};
+use eframe::egui;
 
-pub fn build_game_window() -> eframe::Result {
+use super::{board_view::board_view, main_menu_view::main_menu_view};
+use crate::game_controller::{GameController, GameState};
+
+
+pub fn build_game_window(controller: GameController) -> eframe::Result {
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([400.0, 800.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([800.0, 800.0]),
         ..Default::default()
     };
+    let menu = GameWindow::new(controller);
 
     eframe::run_native(
         "Ferris Othello",
         options,
         Box::new(|cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
-            Ok(Box::<MyApp>::default())
+            Ok(Box::new(menu))
         }))
 }
 
-#[derive(Default)]
-struct MyApp {}
+struct GameWindow {
+    controller: GameController,
+    ip_addr: String,
+}
 
-impl eframe::App for MyApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label("Game Board");
+impl eframe::App for GameWindow {
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
+        match self.controller.get_state() {
+            GameState::NoConnection => main_menu_view(ctx, &mut self.controller, &mut self.ip_addr),
+            GameState::Playing => board_view(ctx, &mut self.controller),
+            GameState::GameEnded => board_view(ctx, &mut self.controller),
+        }
+    }
+}
 
-            if ui.button("Mojo Pin").clicked() {
-                println!("uhhhh uhhhhu uuuuuhhhhhh")
-            }
-            
-            let painter = ui.painter();
-            painter.circle(
-                egui::Pos2{x: 20.0, y: 20.0},
-                50.0,
-                Color32::BLUE,
-                Stroke{width: 2.0, color: Color32::from_rgb(255, 255, 255)})
-        });
+impl GameWindow {
+    fn new(controller: GameController) -> Self {
+        GameWindow {
+            controller: controller,
+            ip_addr: String::new()
+        }
     }
 }
