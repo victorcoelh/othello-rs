@@ -11,14 +11,14 @@ pub struct PeerToPeerConnection {
 impl PeerToPeerConnection {
     pub fn listen_to(addr: &str) -> Result<Self> {
         let (stream, addr) = TcpListener::bind(addr).unwrap().accept()?;
-        println!("Connected to client: {addr}");
+        println!("Connected to peer: {addr}");
 
         Ok(PeerToPeerConnection { client: stream, remote_address: addr })
     }
 
     pub fn connect_to(addr: &str) -> Result<Self> {
-        let client = TcpStream::connect("127.0.0.1:8080")?;
-        println!("Connected to client: {addr}");
+        let client = TcpStream::connect(addr)?;
+        println!("Connected to peer: {addr}");
 
         let address: SocketAddr = addr.parse().expect("Unable to parse address to a socket.");
         Ok(PeerToPeerConnection { client: client, remote_address: address })
