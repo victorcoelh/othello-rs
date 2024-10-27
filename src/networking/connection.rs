@@ -1,11 +1,10 @@
-use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::net::{TcpListener, TcpStream};
 use std::io::{Read, Result, Write, Error, ErrorKind};
 
 use super::Message;
 
 pub struct PeerToPeerConnection {
     client: TcpStream,
-    remote_address: SocketAddr
 }
 
 impl PeerToPeerConnection {
@@ -13,15 +12,15 @@ impl PeerToPeerConnection {
         let (stream, addr) = TcpListener::bind(addr).unwrap().accept()?;
         println!("Connected to peer: {addr}");
 
-        Ok(PeerToPeerConnection { client: stream, remote_address: addr })
+        Ok(PeerToPeerConnection { client: stream })
     }
 
     pub fn connect_to(addr: &str) -> Result<Self> {
         let client = TcpStream::connect(addr)?;
         println!("Connected to peer: {addr}");
 
-        let address: SocketAddr = addr.parse().expect("Unable to parse address to a socket.");
-        Ok(PeerToPeerConnection { client: client, remote_address: address })
+        //let address: SocketAddr = addr.parse().expect("Unable to parse address to a socket.");
+        Ok(PeerToPeerConnection { client: client })
     }
 
     pub fn send_message(&mut self, message: Message) -> Result<()> {

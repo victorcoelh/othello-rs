@@ -1,6 +1,6 @@
 use othello_rs::game_controller::GameController;
 use othello_rs::networking::Message;
-use othello_rs::gui::game_window::build_game_window;
+use othello_rs::gui::gui_runner::build_game_window;
 
 fn main() -> eframe::Result<()> {
     let message = Message::TextMessage("I love cock".to_string());

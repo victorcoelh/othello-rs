@@ -1,6 +1,6 @@
 use eframe::egui;
 
-use super::{board_view::board_view, main_menu_view::main_menu_view};
+use super::{board_view::BoardView, main_menu_view::MainMenuView};
 use crate::game_controller::{GameController, GameState};
 
 
@@ -9,7 +9,7 @@ pub fn build_game_window(controller: GameController) -> eframe::Result {
         viewport: egui::ViewportBuilder::default().with_inner_size([800.0, 800.0]),
         ..Default::default()
     };
-    let menu = GameWindow::new(controller);
+    let menu = GuiRunner::new(controller);
 
     eframe::run_native(
         "Ferris Othello",
@@ -20,26 +20,28 @@ pub fn build_game_window(controller: GameController) -> eframe::Result {
         }))
 }
 
-struct GameWindow {
+struct GuiRunner {
     controller: GameController,
-    ip_addr: String,
+    board_view: BoardView,
+    main_menu_view: MainMenuView,
 }
 
-impl eframe::App for GameWindow {
+impl eframe::App for GuiRunner {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         match self.controller.get_state() {
-            GameState::NoConnection => main_menu_view(ctx, &mut self.controller, &mut self.ip_addr),
-            GameState::Playing => board_view(ctx, &mut self.controller),
-            GameState::GameEnded => board_view(ctx, &mut self.controller),
+            GameState::NoConnection => self.main_menu_view.draw(ctx, &mut self.controller),
+            GameState::Playing => self.board_view.draw(ctx, &mut self.controller),
+            GameState::GameEnded => panic!("game ended"),
         }
     }
 }
 
-impl GameWindow {
+impl GuiRunner {
     fn new(controller: GameController) -> Self {
-        GameWindow {
+        GuiRunner {
             controller: controller,
-            ip_addr: String::new()
+            board_view: BoardView::new(),
+            main_menu_view: MainMenuView::new()
         }
     }
 }

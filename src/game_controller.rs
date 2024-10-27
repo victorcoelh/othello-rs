@@ -29,8 +29,16 @@ impl GameController {
         &self.state
     }
 
+    pub fn get_piece_at(&self, rank: usize, file: usize) -> Option<u8>{
+        self.board.get_piece_at(rank, file)
+    }
+
     pub fn get_messages(&self) -> &Vec<String> {
         &self.chat_messages
+    }
+
+    pub fn push_message(&mut self, msg: String) {
+        self.chat_messages.push(msg);
     }
 
     pub fn set_piece_on_board(&mut self, rank: char, file: u8, which_player: u8)

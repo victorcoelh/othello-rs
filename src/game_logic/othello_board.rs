@@ -23,6 +23,10 @@ impl OthelloBoard{
         OthelloBoard { board_state: empty_board }
     }
 
+    pub fn get_piece_at(&self, rank: usize, file: usize) -> Option<u8>{
+        self.board_state[file][rank].map(|piece| piece.state)
+    }
+
     pub fn set_piece(&mut self, rank: char, file: u8, which_player: u8) -> Result<(), &'static str> {
         let rank = ((rank as u32) - ('a' as u32)) as usize;
         let file = (file - 1) as usize;
