@@ -33,6 +33,8 @@ impl eframe::App for GuiRunner {
             GameState::Playing => self.board_view.draw(ctx, &mut self.controller),
             GameState::GameEnded => panic!("game ended"),
         }
+
+        self.controller.check_for_new_message();
     }
 }
 
