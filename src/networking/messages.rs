@@ -22,7 +22,7 @@ impl Message {
             b'0' => {
                 let x = bytes.get(1).expect("Missing X value for position message.");
                 let y = bytes.get(2).expect("Missing Y value for position message.");
-                Ok(Message::SetPiece((*x, *y)))
+                Ok(Message::SetPiece((*x as usize, *y as usize)))
             },
             b'1' => {
                 let text = String::from_utf8(bytes[1..].to_vec()).unwrap();

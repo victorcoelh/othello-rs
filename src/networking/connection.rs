@@ -28,11 +28,27 @@ impl PeerToPeerConnection {
     }
 
     pub fn wait_for_message(&mut self) -> Result<Message> {
+        self.client.set_nonblocking(false).unwrap();
+
         let mut bytes: Vec<u8> = Vec::new();
         self.client.read_to_end(&mut bytes)?;
 
         Message::from_bytes(&bytes).map_err(|err| {
             Error::new(ErrorKind::InvalidData, err)
         })
+    }
+
+    pub fn get_message_if_available(&mut self) -> Option<Message> {
+        self.client.set_nonblocking(true).unwrap();
+
+        let mut bytes: Vec<u8> = Vec::new();
+        match self.client.read(&mut bytes) {
+            Ok(_) => {
+                self.client.read_to_end(&mut bytes).expect("IO Error when reading from connection");
+                Some(Message::from_bytes(&bytes).expect("Received invalid data."))
+            },
+            Err(e) if e.kind() == ErrorKind::WouldBlock => None,
+            Err(e) => panic!("IO Error when reading from connection: {e}")
+        }
     }
 }

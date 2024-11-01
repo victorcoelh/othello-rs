@@ -27,10 +27,7 @@ impl OthelloBoard{
         self.board_state[file][rank].map(|piece| piece.state)
     }
 
-    pub fn set_piece(&mut self, rank: char, file: u8, which_player: u8) -> Result<(), &'static str> {
-        let rank = ((rank as u32) - ('a' as u32)) as usize;
-        let file = (file - 1) as usize;
-
+    pub fn set_piece(&mut self, rank: usize, file: usize, which_player: u8) -> Result<(), &'static str> {
         if rank > 7 || file > 7 {
             return Err("Invalid piece position given. Either the rank or the file are outside \
             of the game board's upper bounds. Maximum rank: h, maximum file: 8.");
