@@ -51,7 +51,12 @@ impl GameController {
     }
 
     pub fn check_for_new_message(&mut self) {
-        if let Some(msg) = self.peer.as_mut().unwrap().get_message_if_available() {
+        let peer = match self.peer.as_mut() {
+            Some(peer) => peer,
+            None => return
+        };
+
+        if let Some(msg) = peer.get_message_if_available() {
             match msg {
                 Message::TextMessage(text) => self.chat_messages.push(text),
                 _ => panic!("Can't handle message type")
