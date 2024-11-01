@@ -42,9 +42,8 @@ impl PeerToPeerConnection {
         self.client.set_nonblocking(true).unwrap();
 
         let mut bytes: Vec<u8> = Vec::new();
-        match self.client.read(&mut bytes) {
+        match self.client.read_to_end(&mut bytes) {
             Ok(_) => {
-                self.client.read_to_end(&mut bytes).expect("IO Error when reading from connection");
                 Some(Message::from_bytes(&bytes).expect("Received invalid data."))
             },
             Err(e) if e.kind() == ErrorKind::WouldBlock => None,
