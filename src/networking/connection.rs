@@ -36,6 +36,7 @@ impl PeerToPeerConnection {
         match self.client.read_to_end(&mut bytes) {
             Ok(0) => None,
             Ok(_) => {
+                println!("received message: {:?}", bytes);
                 let message = Message::from_bytes(&bytes).map_err(|err| {
                     Error::new(ErrorKind::InvalidData, err)
                 }).unwrap();
