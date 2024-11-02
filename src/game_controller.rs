@@ -91,7 +91,6 @@ impl GameController {
         });
 
         self.state = GameState::Playing;
-        handler.join().unwrap();
         Ok(())
     }
 
