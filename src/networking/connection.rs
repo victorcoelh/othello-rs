@@ -22,7 +22,6 @@ impl PeerToPeerConnection {
         stream.set_read_timeout(Some(Duration::from_secs_f32(timeout))).unwrap();
         println!("Connected to peer: {addr}");
 
-        //let address: SocketAddr = addr.parse().expect("Unable to parse address to a socket.");
         Ok(PeerToPeerConnection { client: stream })
     }
 
@@ -33,13 +32,19 @@ impl PeerToPeerConnection {
 
     pub fn wait_for_message(&mut self) -> Option<Message> {
         let mut bytes: Vec<u8> = Vec::new();
-        match self.client.read_to_end(&mut bytes) {
-            Ok(0) => None,
+        let mut msg_size: [u8; 1] = [0];
+
+        match self.client.read_exact(&mut msg_size) {
             Ok(_) => {
-                println!("received message: {:?}", bytes);
+                Read::by_ref(&mut self.client)
+                    .take(msg_size[0] as u64)
+                    .read_to_end(&mut bytes)
+                    .unwrap();
+
                 let message = Message::from_bytes(&bytes).map_err(|err| {
-                    Error::new(ErrorKind::InvalidData, err)
-                }).unwrap();
+                        Error::new(ErrorKind::InvalidData, err)
+                    }).unwrap();
+
                 Some(message)
             },
             Err(_) => None

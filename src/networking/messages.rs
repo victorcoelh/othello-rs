@@ -10,10 +10,10 @@ pub enum Message {
 impl Message {
     pub fn to_bytes(&self) -> Vec<u8> {
         match self {
-            Self::SetPiece(pos) => format!("{}{}{}", "0", pos.0, pos.1),
-            Self::TextMessage(text) => format!("{}{}", "1", text),
-            Self::PassTurn() => "2".to_string(),
-            Self::Surrender() => "3".to_string(), 
+            Self::SetPiece(pos) => format!("3{}{}{}", "0", pos.0, pos.1),
+            Self::TextMessage(text) => format!("{}{}{}", text.len(), "1", text),
+            Self::PassTurn() => "12".to_string(),
+            Self::Surrender() => "13".to_string(), 
         }.into_bytes()
     }
 

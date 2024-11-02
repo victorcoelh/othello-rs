@@ -61,6 +61,7 @@ impl GameController {
         };
 
         if let Some(msg) = rx.try_recv().ok() {
+            println!("got message");
             match msg {
                 Message::TextMessage(text) => self.chat_messages.push(text),
                 _ => panic!("Can't handle message type")
@@ -71,7 +72,7 @@ impl GameController {
     pub fn listen_and_connect(&mut self, addr: &str) -> Result<(), Error> {
         let (connection_tx, controller_rx) = mpsc::channel();
         let (controller_tx, connection_rx) = mpsc::channel();
-        let mut connection = PeerToPeerConnection::listen_to(addr, 1.0)?;
+        let mut connection = PeerToPeerConnection::listen_to(addr, 3.0)?;
 
         self.controller_rx = Some(controller_rx);
         self.controller_tx = Some(controller_tx);
