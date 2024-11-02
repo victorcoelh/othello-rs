@@ -2,7 +2,7 @@ use std::net::{TcpListener, TcpStream};
 use std::io::{Read, Result, Write, Error, ErrorKind};
 use std::time::Duration;
 
-use super::Message;
+use super::{Message, BUFFER_SIZE};
 
 pub struct PeerToPeerConnection {
     client: TcpStream
@@ -31,20 +31,13 @@ impl PeerToPeerConnection {
     }
 
     pub fn wait_for_message(&mut self) -> Option<Message> {
-        let mut bytes: Vec<u8> = Vec::new();
-        let mut msg_size: [u8; 1] = [0];
+        let mut bytes: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
 
-        match self.client.read_exact(&mut msg_size) {
+        match self.client.read_exact(&mut bytes) {
             Ok(_) => {
-                Read::by_ref(&mut self.client)
-                    .take(msg_size[0] as u64)
-                    .read_to_end(&mut bytes)
-                    .unwrap();
-
                 let message = Message::from_bytes(&bytes).map_err(|err| {
                         Error::new(ErrorKind::InvalidData, err)
                     }).unwrap();
-
                 Some(message)
             },
             Err(_) => None
