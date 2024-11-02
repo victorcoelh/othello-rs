@@ -85,6 +85,8 @@ impl GameController {
                 connection.send_message(send_msg).unwrap();
             }
         });
+
+        self.state = GameState::Playing;
         Ok(())
     }
 
@@ -105,6 +107,8 @@ impl GameController {
                 connection.send_message(send_msg).unwrap();
             }
         });
+
+        self.state = GameState::Playing;
         Ok(())
     }
 }
