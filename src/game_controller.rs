@@ -76,8 +76,10 @@ impl GameController {
         self.controller_rx = Some(controller_rx);
         self.controller_tx = Some(controller_tx);
 
-        thread::spawn(move || {
+        let handler = thread::spawn(move || {
             loop {
+                println!("vazio roxo");
+
                 if let Some(rcv_msg) = connection.wait_for_message() {
                     connection_tx.send(rcv_msg).unwrap();
                 }
@@ -89,6 +91,7 @@ impl GameController {
         });
 
         self.state = GameState::Playing;
+        handler.join().unwrap();
         Ok(())
     }
 
