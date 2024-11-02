@@ -149,9 +149,7 @@ impl BoardView {
 
                     if ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                         if !self.chatbox_text.is_empty(){
-                            controller.push_chat_message(format!(
-                                "player: {}", self.chatbox_text.clone())
-                            );
+                            controller.push_chat_message(self.chatbox_text.clone(), 0);
 
                             self.chatbox_text.clear();
                             ui.memory_mut(|mem| {

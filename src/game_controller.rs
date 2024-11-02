@@ -41,8 +41,13 @@ impl GameController {
         &self.chat_messages
     }
 
-    pub fn push_chat_message(&mut self, msg: String) {
-        self.chat_messages.push(msg.clone());
+    pub fn push_chat_message(&mut self, msg: String, which_player: u8) {
+        let msg_with_prefix = match which_player {
+            0 => format!("player: {}", msg),
+            _ => format!("opponent: {}", msg)
+        };
+
+        self.chat_messages.push(msg_with_prefix);
         self.controller_tx.as_mut().unwrap().send(Message::TextMessage(msg)).expect("a");
     }
 
@@ -63,7 +68,7 @@ impl GameController {
         if let Some(msg) = rx.try_recv().ok() {
             println!("got message");
             match msg {
-                Message::TextMessage(text) => self.chat_messages.push(text),
+                Message::TextMessage(text) => self.push_chat_message(text, 1),
                 _ => panic!("Can't handle message type")
             }
         }
