@@ -43,12 +43,16 @@ impl GameController {
 
     pub fn push_chat_message(&mut self, msg: String, which_player: u8) {
         let msg_with_prefix = match which_player {
-            0 => format!("player: {}", msg),
+            0 => {
+                self.controller_tx.as_mut()
+                    .unwrap()
+                    .send(Message::TextMessage(msg.clone()))
+                    .unwrap();
+                format!("player: {}", msg)
+            },
             _ => format!("opponent: {}", msg)
         };
-
         self.chat_messages.push(msg_with_prefix);
-        self.controller_tx.as_mut().unwrap().send(Message::TextMessage(msg)).expect("a");
     }
 
     pub fn set_piece_on_board(&mut self, rank: usize, file: usize, which_player: u8)
