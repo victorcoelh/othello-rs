@@ -43,7 +43,7 @@ impl GameController {
 
     pub fn push_chat_message(&mut self, msg: String) {
         self.chat_messages.push(msg.clone());
-        self.controller_tx.as_mut().unwrap().send(Message::TextMessage(msg)).unwrap();
+        self.controller_tx.as_mut().unwrap().send(Message::TextMessage(msg)).expect("a");
     }
 
     pub fn set_piece_on_board(&mut self, rank: usize, file: usize, which_player: u8)
@@ -77,12 +77,14 @@ impl GameController {
         self.controller_tx = Some(controller_tx);
 
         thread::spawn(move || {
-            if let Some(rcv_msg) = connection.wait_for_message() {
-                connection_tx.send(rcv_msg).unwrap();
-            }
-
-            if let Some(send_msg) = connection_rx.try_recv().ok() {
-                connection.send_message(send_msg).unwrap();
+            loop {
+                if let Some(rcv_msg) = connection.wait_for_message() {
+                    connection_tx.send(rcv_msg).unwrap();
+                }
+    
+                if let Some(send_msg) = connection_rx.try_recv().ok() {
+                    connection.send_message(send_msg).unwrap();
+                }
             }
         });
 
