@@ -11,7 +11,7 @@ pub struct PeerToPeerConnection {
 impl PeerToPeerConnection {
     pub fn listen_to(addr: &str, timeout: f32) -> Result<Self> {
         let (stream, addr) = TcpListener::bind(addr).unwrap().accept()?;
-        stream.set_read_timeout(Some(Duration::from_secs_f32(timeout)));
+        stream.set_read_timeout(Some(Duration::from_secs_f32(timeout))).unwrap();
         println!("Connected to peer: {addr}");
 
         Ok(PeerToPeerConnection { client: stream })
@@ -19,7 +19,7 @@ impl PeerToPeerConnection {
 
     pub fn connect_to(addr: &str, timeout: f32) -> Result<Self> {
         let stream = TcpStream::connect(addr)?;
-        stream.set_read_timeout(Some(Duration::from_secs_f32(timeout)));
+        stream.set_read_timeout(Some(Duration::from_secs_f32(timeout))).unwrap();
         println!("Connected to peer: {addr}");
 
         //let address: SocketAddr = addr.parse().expect("Unable to parse address to a socket.");
@@ -34,6 +34,7 @@ impl PeerToPeerConnection {
     pub fn wait_for_message(&mut self) -> Option<Message> {
         let mut bytes: Vec<u8> = Vec::new();
         match self.client.read_to_end(&mut bytes) {
+            Ok(0) => None,
             Ok(_) => {
                 let message = Message::from_bytes(&bytes).map_err(|err| {
                     Error::new(ErrorKind::InvalidData, err)
@@ -41,20 +42,6 @@ impl PeerToPeerConnection {
                 Some(message)
             },
             Err(_) => None
-        }
-    }
-
-    pub fn get_message_if_available(&mut self) -> Option<Message> {
-        self.client.set_nonblocking(true).unwrap();
-
-        let mut bytes: Vec<u8> = Vec::new();
-        match self.client.read(&mut bytes) {
-            Ok(_) => {
-                println!("received message: {:?}", bytes.to_ascii_lowercase());
-                Some(Message::from_bytes(&bytes).expect("Received invalid data."))
-            },
-            Err(e) if e.kind() == ErrorKind::WouldBlock => None,
-            Err(e) => panic!("IO Error when reading from connection: {e}")
         }
     }
 }
