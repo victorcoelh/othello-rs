@@ -38,10 +38,9 @@ impl BoardView {
 
                 self.board_widget(ui, controller);
                 
-                if let Some(error) = self.error {
-                    ui.label(egui::RichText::new(error).color(Color32::LIGHT_RED));
-                }
-                ui.add_space(100.0);
+                ui.add_space(40.0);
+                self.error_widget(ui);
+                ui.add_space(40.0);
 
                 ui.with_layout(Layout::right_to_left(egui::Align::BOTTOM), |ui| {
                     self.menu_widget(ui);
@@ -224,5 +223,18 @@ impl BoardView {
             .fill(BUTTON_COLOR.clone())
             .rounding(5.0)
             .min_size(Vec2::new(0.0, 50.0)))
+    }
+
+    fn error_widget(&mut self, ui: &mut Ui) {
+        egui::Frame::none()
+            .show(ui, |ui| {
+                ui.set_min_height(ui.available_height());
+
+                if let Some(error) = self.error {
+                    ui.label(egui::RichText::new(error)
+                        .color(Color32::LIGHT_RED)
+                        .size(14.0));
+                }
+            });
     }
 }

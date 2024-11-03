@@ -144,6 +144,7 @@ impl GameController {
         });
 
         self.state = GameState::Playing;
+        self.player_turn = false;
         Ok(())
     }
 
