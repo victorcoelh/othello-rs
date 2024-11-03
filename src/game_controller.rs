@@ -79,9 +79,9 @@ impl GameController {
         if let Some(msg) = rx.try_recv().ok() {
             println!("got message");
             match msg {
-                Message::TextMessage(text) => self.push_chat_message(text, 1),
+                Message::TextMessage(text) => self.push_chat_message(text, true),
                 Message::SetPiece((x, y)) => {
-                    self.set_piece_on_board(x, y, 1).unwrap();
+                    self.set_piece_on_board(x, y, true).unwrap();
                 }
                 Message::PassTurn() => return,
                 Message::Surrender() => return,
