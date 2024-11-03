@@ -1,4 +1,4 @@
-use core::f32;
+use core::{error, f32};
 
 use eframe::egui::{self, Color32, Layout, Ui, Vec2};
 
@@ -12,30 +12,35 @@ pub struct BoardView {
     chatbox_text: String,
     text_font: egui::FontId,
     rank_font: egui::FontId,
+    error: Option<&'static str>,
 }
 
 impl BoardView {
     pub fn new() -> Self {
-        let mut board = [[None; 8]; 8];
-        board[3][3] = Some(true);
-        board[3][4] = Some(false);
-        board[4][3] = Some(false);
-        board[4][4] = Some(true);
-
         BoardView {
             chatbox_text: String::new(),
             text_font: egui::FontId::proportional(16.0),
             rank_font: egui::FontId::monospace(18.0),
+            error: None
          }
     }
 
     pub fn draw(&mut self, ctx: &egui::Context, controller: &mut GameController) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                ui.heading("Connected!");
+                let turn_text = match controller.get_player_turn() {
+                    true => "Your turn!",
+                    false => "Waiting for opponent..."
+                };
+
+                ui.heading(turn_text);
                 ui.add_space(50.0);
 
                 self.board_widget(ui, controller);
+                
+                if let Some(error) = self.error {
+                    ui.label(error);
+                }
                 ui.add_space(100.0);
 
                 ui.with_layout(Layout::right_to_left(egui::Align::BOTTOM), |ui| {
@@ -44,7 +49,7 @@ impl BoardView {
                 });
             });
         });
-    }
+        }
 
     fn board_widget(&mut self, ui: &mut Ui, controller: &mut GameController) {
         ui.horizontal_top(|ui| {
@@ -110,7 +115,7 @@ impl BoardView {
     }
 
     fn cell_widget(&mut self, ui: &mut Ui, i: usize, j: usize, controller: &mut GameController) {
-        let cell = egui::Frame::none()
+        egui::Frame::none()
             .inner_margin(0.0)
             .outer_margin(0.0)
             .stroke(egui::Stroke::new(1.0, Color32::BLACK))
@@ -132,8 +137,10 @@ impl BoardView {
                                 .min_size(ui.available_size()));
 
                             if button.clicked() {
-                                println!("clicked position: {i}{j}");
-                                controller.set_piece_on_board(i, j, false).unwrap();
+                                if let Err(e) = controller.set_piece_on_board(i, j, false) {
+                                    println!("error: {e}");
+                                    self.error = Some(e);
+                                }
                             }
                         }
                     })

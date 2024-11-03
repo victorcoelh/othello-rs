@@ -19,8 +19,13 @@ pub struct OthelloBoard{
 
 impl OthelloBoard{
     pub fn new() -> Self {
-        let empty_board = [[None; 8]; 8];
-        OthelloBoard { board_state: empty_board }
+        let mut board = [[None; 8]; 8];
+        board[3][3] = Some(OthelloPiece::new(1));
+        board[3][4] = Some(OthelloPiece::new(0));
+        board[4][3] = Some(OthelloPiece::new(0));
+        board[4][4] = Some(OthelloPiece::new(1));
+
+        OthelloBoard { board_state: board }
     }
 
     pub fn get_piece_at(&self, rank: usize, file: usize) -> Option<u8>{

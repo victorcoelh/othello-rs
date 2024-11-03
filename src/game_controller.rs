@@ -46,6 +46,10 @@ impl GameController {
     pub fn get_chat_messages(&self) -> &Vec<String> {
         &self.chat_messages
     }
+    
+    pub fn get_player_turn(&self) -> bool {
+        self.player_turn
+    }
 
     pub fn push_chat_message(&mut self, msg: String, which_player: bool) {
         let msg_with_prefix = match which_player {
