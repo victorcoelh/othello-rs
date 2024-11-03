@@ -133,7 +133,7 @@ impl BoardView {
 
                             if button.clicked() {
                                 println!("clicked position: {i}{j}");
-                                controller.set_piece_on_board(i, j, 0).unwrap();
+                                controller.set_piece_on_board(i, j, false).unwrap();
                             }
                         }
                     })
@@ -157,7 +157,7 @@ impl BoardView {
 
                     if ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                         if !self.chatbox_text.is_empty(){
-                            controller.push_chat_message(self.chatbox_text.clone(), 0);
+                            controller.push_chat_message(self.chatbox_text.clone(), false);
 
                             self.chatbox_text.clear();
                             ui.memory_mut(|mem| {

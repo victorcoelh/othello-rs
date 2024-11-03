@@ -15,6 +15,7 @@ pub enum GameState {
 pub struct GameController {
     state: GameState,
     board: OthelloBoard,
+    is_host: bool,
     player_turn: bool,
     chat_messages: Vec<String>,
     controller_tx: Option<mpsc::Sender<Message>>,
@@ -26,6 +27,7 @@ impl GameController {
         GameController {
             state: GameState::NoConnection,
             board: OthelloBoard::new(),
+            is_host: false,
             player_turn: true,
             chat_messages: Vec::new(),
             controller_tx: None,
@@ -45,23 +47,24 @@ impl GameController {
         &self.chat_messages
     }
 
-    pub fn push_chat_message(&mut self, msg: String, which_player: u8) {
+    pub fn push_chat_message(&mut self, msg: String, which_player: bool) {
         let msg_with_prefix = match which_player {
-            0 => {
+            false => {
                 self.controller_tx.as_mut()
                     .unwrap()
                     .send(Message::TextMessage(msg.clone()))
                     .unwrap();
                 format!("player: {}", msg)
             },
-            _ => format!("opponent: {}", msg)
+            true => format!("opponent: {}", msg)
         };
         self.chat_messages.push(msg_with_prefix);
     }
 
-    pub fn set_piece_on_board(&mut self, rank: usize, file: usize, which_player: u8)
+    pub fn set_piece_on_board(&mut self, rank: usize, file: usize, which_player: bool)
         -> Result<(), &'static str> {
-        self.board.set_piece(rank, file, which_player)?;
+        let which_player = self.swap_player_if_not_host(which_player);
+        self.board.set_piece(rank, file, which_player as u8)?;
         self.controller_tx.as_mut().unwrap().send(Message::SetPiece((rank, file))).unwrap();
 
         Ok(())
@@ -107,6 +110,7 @@ impl GameController {
         });
 
         self.state = GameState::Playing;
+        self.is_host = true;
         Ok(())
     }
 
@@ -132,5 +136,13 @@ impl GameController {
 
         self.state = GameState::Playing;
         Ok(())
+    }
+
+    fn swap_player_if_not_host(&self, which_player: bool) -> bool {
+        if !self.is_host {
+            !which_player
+        } else {
+            which_player
+        }
     }
 }
