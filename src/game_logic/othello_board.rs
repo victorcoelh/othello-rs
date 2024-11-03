@@ -67,7 +67,6 @@ impl OthelloBoard{
     fn flip_pieces_if_needed(&mut self, rank: usize, file: usize) {
         let should_flip = self.check_for_flanks(rank, file);
         let current_state = self.board_state[file][rank].unwrap().state;
-        let current_state = (current_state == 0) as u8;
 
         for (rank, file) in should_flip {
             self.board_state[file][rank] = Some(OthelloPiece { state: current_state })
@@ -81,6 +80,7 @@ impl OthelloBoard{
         for direction in self.cast_rays(rank, file) {
             for (i, (rank, file)) in direction.iter().enumerate() {
                 if current_piece == self.board_state[*file][*rank] {
+                    println!("{:?}", &direction[..i]);
                     should_flip.extend_from_slice(&direction[..i]);
                 }
             }
@@ -92,10 +92,11 @@ impl OthelloBoard{
         let mut hit_rays: Vec<Vec<Position>> = Vec::new();
 
         hit_rays.push((rank+1..8).map(|x| (x, file)).collect());
-        hit_rays.push((0..rank).map(|x| (x, file)).collect());
+        hit_rays.push((0..rank).rev().map(|x| (x, file)).collect());
         hit_rays.push((file+1..8).map(|y| (rank, y)).collect());
-        hit_rays.push((0..file).map(|y| (rank, y)).collect());
+        hit_rays.push((0..file).rev().map(|y| (rank, y)).collect());
 
+        println!("{:?}", hit_rays);
         hit_rays
     }
 }

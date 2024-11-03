@@ -12,7 +12,7 @@ impl GameEndView {
     pub fn draw(&mut self, ctx: &egui::Context, _controller: &mut GameController, player_won: bool) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.centered_and_justified(|ui| {
-                ui.horizontal(|ui| {
+                ui.vertical_centered(|ui| {
                     let end_text = match player_won {
                         true => "You Win!!",
                         false => "You lose... better luck next time!"
