@@ -38,9 +38,9 @@ impl BoardView {
 
                 self.board_widget(ui, controller);
                 
-                ui.add_space(40.0);
+                ui.add_space(20.0);
                 self.error_widget(ui);
-                ui.add_space(40.0);
+                ui.add_space(60.0);
 
                 ui.with_layout(Layout::right_to_left(egui::Align::BOTTOM), |ui| {
                     self.menu_widget(ui);
@@ -228,7 +228,8 @@ impl BoardView {
     fn error_widget(&mut self, ui: &mut Ui) {
         egui::Frame::none()
             .show(ui, |ui| {
-                ui.set_min_height(ui.available_height());
+                ui.set_min_height(20.0);
+                ui.set_max_height(20.0);
 
                 if let Some(error) = self.error {
                     ui.label(egui::RichText::new(error)

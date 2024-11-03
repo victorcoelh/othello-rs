@@ -65,11 +65,10 @@ impl GameController {
 
     pub fn set_piece_on_board(&mut self, rank: usize, file: usize, which_player: bool)
         -> Result<(), &'static str> {
-        if !self.player_turn {
-            return Err("Wait for your opponent's turn!");
-        }
-
         if !which_player {
+            if !self.player_turn {
+                return Err("Wait for your opponent's turn!");
+            }
             self.controller_tx.as_mut().unwrap().send(Message::SetPiece((rank, file))).unwrap();
         }
 
