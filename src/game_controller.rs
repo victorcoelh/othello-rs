@@ -1,3 +1,5 @@
+use eframe::egui::Modifiers;
+
 use crate::game_logic::OthelloBoard;
 use crate::networking::{Message, PeerToPeerConnection};
 use std::io::Error;
@@ -13,6 +15,7 @@ pub enum GameState {
 pub struct GameController {
     state: GameState,
     board: OthelloBoard,
+    player_turn: bool,
     chat_messages: Vec<String>,
     controller_tx: Option<mpsc::Sender<Message>>,
     controller_rx: Option<mpsc::Receiver<Message>>,
@@ -23,6 +26,7 @@ impl GameController {
         GameController {
             state: GameState::NoConnection,
             board: OthelloBoard::new(),
+            player_turn: true,
             chat_messages: Vec::new(),
             controller_tx: None,
             controller_rx: None
@@ -73,7 +77,11 @@ impl GameController {
             println!("got message");
             match msg {
                 Message::TextMessage(text) => self.push_chat_message(text, 1),
-                _ => panic!("Can't handle message type")
+                Message::SetPiece((x, y)) => {
+                    self.set_piece_on_board(x, y, 1).unwrap();
+                }
+                Message::PassTurn() => return,
+                Message::Surrender() => return,
             }
         }
     }

@@ -110,7 +110,7 @@ impl BoardView {
     }
 
     fn cell_widget(&mut self, ui: &mut Ui, i: usize, j: usize, controller: &mut GameController) {
-        egui::Frame::none()
+        let cell = egui::Frame::none()
             .inner_margin(0.0)
             .outer_margin(0.0)
             .stroke(egui::Stroke::new(1.0, Color32::BLACK))
@@ -125,12 +125,20 @@ impl BoardView {
                                 1 => egui::include_image!("../../assets/white_piece.png"),
                                 _ => panic!("Invalid piece type at position {i}:{j}")
                             };
+                            ui.add(egui::Image::new(image).sense(egui::Sense::click()));
+                        } else {
+                            let button = ui.add(egui::Button::new("")
+                                .frame(false)
+                                .min_size(ui.available_size()));
 
-                            ui.add(egui::Image::new(image));
+                            if button.clicked() {
+                                println!("clicked position: {i}{j}");
+                                controller.set_piece_on_board(i, j, 0).unwrap();
                             }
-                        })
-                    });
+                        }
+                    })
                 });
+            });
     }
 
     fn chat_widget(&mut self, ui: &mut Ui, controller: &mut GameController) {
