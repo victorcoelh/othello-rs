@@ -63,10 +63,12 @@ impl GameController {
 
     pub fn set_piece_on_board(&mut self, rank: usize, file: usize, which_player: bool)
         -> Result<(), &'static str> {
+        if !which_player {
+            self.controller_tx.as_mut().unwrap().send(Message::SetPiece((rank, file))).unwrap();
+        }
+
         let which_player = self.swap_player_if_not_host(which_player);
         self.board.set_piece(rank, file, which_player as u8)?;
-        self.controller_tx.as_mut().unwrap().send(Message::SetPiece((rank, file))).unwrap();
-
         Ok(())
     }
 
