@@ -7,7 +7,7 @@ use std::thread;
 pub enum GameState {
     NoConnection,
     Playing,
-    GameEnded,
+    GameEnded(bool),
 }
 
 pub struct GameController {
@@ -49,6 +49,21 @@ impl GameController {
         self.player_turn
     }
 
+    pub fn pass_turn(&mut self) -> Result<(), &'static str> {
+        if !self.player_turn {
+            return Err("Not your turn!");
+        }
+
+        self.player_turn = false;
+        self.controller_tx.as_mut().unwrap().send(Message::PassTurn()).unwrap();
+        Ok(())
+    }
+
+    pub fn surrender(&mut self) {
+        self.controller_tx.as_mut().unwrap().send(Message::Surrender()).unwrap();
+        self.state = GameState::GameEnded(false);
+    }
+
     pub fn push_chat_message(&mut self, msg: String, which_player: bool) {
         let msg_with_prefix = match which_player {
             false => {
@@ -88,11 +103,11 @@ impl GameController {
             println!("got message");
             match msg {
                 Message::TextMessage(text) => self.push_chat_message(text, true),
+                Message::PassTurn() => self.player_turn = !self.player_turn,
+                Message::Surrender() => self.state = GameState::GameEnded(true),
                 Message::SetPiece((x, y)) => {
                     self.set_piece_on_board(x, y, true).unwrap();
                 }
-                Message::PassTurn() => return,
-                Message::Surrender() => return,
             }
         }
     }

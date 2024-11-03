@@ -1,3 +1,5 @@
+use crate::Position;
+
 #[derive(Copy, Clone, Debug)]
 struct OthelloPiece{
     state: u8
@@ -10,6 +12,12 @@ impl OthelloPiece{
             in a binary state, representing a piece for either player.");
         }
         OthelloPiece { state: which_player }
+    }
+}
+
+impl PartialEq for OthelloPiece {
+    fn eq(&self, other: &Self) -> bool {
+        self.state == other.state
     }
 }
 
@@ -45,6 +53,7 @@ impl OthelloBoard{
         
         let new_piece = OthelloPiece::new(which_player);
         self.board_state[file][rank] = Some(new_piece);
+        self.flip_pieces_if_needed(rank, file);
 
         Ok(())
     }
@@ -53,5 +62,40 @@ impl OthelloBoard{
         for rank in self.board_state {
             println!("{rank:?}")
         } 
+    }
+
+    fn flip_pieces_if_needed(&mut self, rank: usize, file: usize) {
+        let should_flip = self.check_for_flanks(rank, file);
+        let current_state = self.board_state[file][rank].unwrap().state;
+        let current_state = (current_state == 0) as u8;
+
+        for (rank, file) in should_flip {
+            self.board_state[file][rank] = Some(OthelloPiece { state: current_state })
+        }
+    }
+
+    fn check_for_flanks(&mut self, rank: usize, file: usize) -> Vec<Position> {
+        let mut should_flip: Vec<Position> = Vec::new();
+        let current_piece = self.board_state[file][rank];
+
+        for direction in self.cast_rays(rank, file) {
+            for (i, (rank, file)) in direction.iter().enumerate() {
+                if current_piece == self.board_state[*file][*rank] {
+                    should_flip.extend_from_slice(&direction[..i]);
+                }
+            }
+        }
+        should_flip
+    }
+
+    fn cast_rays(&self, rank: usize, file: usize) -> Vec<Vec<Position>> {
+        let mut hit_rays: Vec<Vec<Position>> = Vec::new();
+
+        hit_rays.push((rank+1..8).map(|x| (x, file)).collect());
+        hit_rays.push((0..rank).map(|x| (x, file)).collect());
+        hit_rays.push((file+1..8).map(|y| (rank, y)).collect());
+        hit_rays.push((0..file).map(|y| (rank, y)).collect());
+
+        hit_rays
     }
 }

@@ -43,12 +43,12 @@ impl BoardView {
                 ui.add_space(60.0);
 
                 ui.with_layout(Layout::right_to_left(egui::Align::BOTTOM), |ui| {
-                    self.menu_widget(ui);
+                    self.menu_widget(ui, controller);
                     self.chat_widget(ui, controller);
                 });
             });
         });
-        }
+    }
 
     fn board_widget(&mut self, ui: &mut Ui, controller: &mut GameController) {
         ui.horizontal_top(|ui| {
@@ -189,7 +189,7 @@ impl BoardView {
         });
     }
 
-    fn menu_widget(&mut self, ui: &mut Ui) {
+    fn menu_widget(&mut self, ui: &mut Ui, controller: &mut GameController) {
         egui::Frame::none()
             .rounding(5.0)
             .inner_margin(5.0)
@@ -204,11 +204,13 @@ impl BoardView {
                     }
 
                     if self.button_widget(ui, "Surrender").clicked() {
-                        println!("Surrender");
+                        controller.surrender();
                     }
 
-                    if self.button_widget(ui, "Settings").clicked() {
-                        println!("Settings");
+                    if self.button_widget(ui, "Pass Turn").clicked() {
+                        if let Err(error) = controller.pass_turn() {
+                            self.error = Some(error);
+                        }
                     }
                 });
             });
