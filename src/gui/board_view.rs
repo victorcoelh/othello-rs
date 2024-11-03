@@ -1,4 +1,4 @@
-use core::{error, f32};
+use core::f32;
 
 use eframe::egui::{self, Color32, Layout, Ui, Vec2};
 
@@ -39,7 +39,7 @@ impl BoardView {
                 self.board_widget(ui, controller);
                 
                 if let Some(error) = self.error {
-                    ui.label(error);
+                    ui.label(egui::RichText::new(error).color(Color32::LIGHT_RED));
                 }
                 ui.add_space(100.0);
 

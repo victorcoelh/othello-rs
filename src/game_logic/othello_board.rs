@@ -38,7 +38,7 @@ impl OthelloBoard{
             of the game board's upper bounds. Maximum rank: h, maximum file: 8.");
         }
 
-        if let Some(_) = self.board_state[rank][file] {
+        if let Some(_) = self.board_state[file][rank] {
             return Err("There already is a piece at the given position. Pieces must be placed on \
             empty squares.")
         }
