@@ -1,12 +1,12 @@
 use eframe::egui;
 
-use super::{board_view::BoardView, main_menu_view::MainMenuView};
+use super::{board_view::BoardView, main_menu_view::MainMenuView, game_end_view::GameEndView};
 use crate::game_controller::{GameController, GameState};
 
 
 pub fn build_game_window(controller: GameController) -> eframe::Result {
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([800.0, 800.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([850.0, 850.0]),
         ..Default::default()
     };
     let menu = GuiRunner::new(controller);
@@ -24,6 +24,7 @@ struct GuiRunner {
     controller: GameController,
     board_view: BoardView,
     main_menu_view: MainMenuView,
+    game_end_view: GameEndView
 }
 
 impl eframe::App for GuiRunner {
@@ -31,7 +32,10 @@ impl eframe::App for GuiRunner {
         match self.controller.get_state() {
             GameState::NoConnection => self.main_menu_view.draw(ctx, &mut self.controller),
             GameState::Playing => self.board_view.draw(ctx, &mut self.controller),
-            GameState::GameEnded => panic!("game ended"),
+            GameState::GameEnded(player_won) => {
+                let player_won = *player_won;
+                self.game_end_view.draw(ctx, &mut self.controller, player_won)
+            }
         }
 
         self.controller.check_for_new_message();
@@ -43,7 +47,8 @@ impl GuiRunner {
         GuiRunner {
             controller: controller,
             board_view: BoardView::new(),
-            main_menu_view: MainMenuView::new()
+            main_menu_view: MainMenuView::new(),
+            game_end_view: GameEndView::new()
         }
     }
 }
