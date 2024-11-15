@@ -58,6 +58,23 @@ impl OthelloBoard{
         Ok(())
     }
 
+    pub fn count_pieces(&self) -> (usize, usize) {
+        let mut p1_pieces: usize = 0;
+        let mut p2_pieces: usize = 0;
+
+        let _: Vec<_> = self.board_state.as_flattened().into_iter().map(|piece| {
+            if let Some(piece) = piece {
+                match piece.state {
+                    0 => p1_pieces += 1,
+                    1 => p2_pieces += 1,
+                    _ => panic!("Unexpected value received for an Othello Piece.")
+                };
+            }
+        }).collect();
+
+        (p1_pieces, p2_pieces)
+    }
+
     pub fn print_board(&self) {
         for rank in self.board_state {
             println!("{rank:?}")

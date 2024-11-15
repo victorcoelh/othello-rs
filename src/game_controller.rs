@@ -15,6 +15,7 @@ pub struct GameController {
     board: OthelloBoard,
     is_host: bool,
     player_turn: bool,
+    opponent_passed: bool,
     chat_messages: Vec<String>,
     controller_tx: Option<mpsc::Sender<Message>>,
     controller_rx: Option<mpsc::Receiver<Message>>,
@@ -27,6 +28,7 @@ impl GameController {
             board: OthelloBoard::new(),
             is_host: false,
             player_turn: true,
+            opponent_passed: false,
             chat_messages: Vec::new(),
             controller_tx: None,
             controller_rx: None
@@ -52,6 +54,10 @@ impl GameController {
     pub fn pass_turn(&mut self) -> Result<(), &'static str> {
         if !self.player_turn {
             return Err("Not your turn!");
+        }
+
+        if self.opponent_passed {
+
         }
 
         self.player_turn = false;
@@ -103,13 +109,34 @@ impl GameController {
             println!("got message");
             match msg {
                 Message::TextMessage(text) => self.push_chat_message(text, true),
-                Message::PassTurn() => self.player_turn = !self.player_turn,
                 Message::Surrender() => self.state = GameState::GameEnded(true),
                 Message::SetPiece((x, y)) => {
                     self.set_piece_on_board(x, y, true).unwrap();
                 }
+                Message::GameEnded() => {
+                    let player_won = self.check_if_player_won();
+                    self.state = GameState::GameEnded(player_won);
+                },
+                Message::PassTurn() => {
+                    self.player_turn = !self.player_turn;
+                    self.opponent_passed = true;
+                },
             }
         }
+    }
+
+    pub fn check_if_player_won(&self) -> bool {
+        let (p1_pieces, p2_pieces) = self.board.count_pieces();
+
+        if self.is_host && p1_pieces > p2_pieces {
+            return true
+        }
+
+        if !self.is_host && p2_pieces > p1_pieces {
+            return true
+        }
+
+        false
     }
 
     pub fn listen_and_connect(&mut self, addr: &str) -> Result<(), Error> {
