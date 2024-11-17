@@ -33,7 +33,7 @@ impl eframe::App for GuiRunner {
             GameState::NoConnection => self.main_menu_view.draw(ctx, &mut self.controller),
             GameState::Playing => self.board_view.draw(ctx, &mut self.controller),
             GameState::GameEnded(player_won) => {
-                let player_won = *player_won;
+                let player_won = player_won.clone();
                 self.game_end_view.draw(ctx, &mut self.controller, player_won)
             }
         }

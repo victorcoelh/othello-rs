@@ -4,6 +4,7 @@ use std::io::Error;
 use std::sync::mpsc;
 use std::thread;
 
+#[derive(Copy, Clone)]
 pub enum GameResult {
     PlayerWon,
     PlayerLost,
