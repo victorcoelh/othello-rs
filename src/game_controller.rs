@@ -4,10 +4,16 @@ use std::io::Error;
 use std::sync::mpsc;
 use std::thread;
 
+pub enum GameResult {
+    PlayerWon,
+    PlayerLost,
+    Tie
+}
+
 pub enum GameState {
     NoConnection,
     Playing,
-    GameEnded(bool),
+    GameEnded(GameResult),
 }
 
 pub struct GameController {
@@ -70,7 +76,7 @@ impl GameController {
 
     pub fn surrender(&mut self) {
         self.controller_tx.as_mut().unwrap().send(Message::Surrender()).unwrap();
-        self.state = GameState::GameEnded(false);
+        self.state = GameState::GameEnded(GameResult::PlayerLost);
     }
 
     pub fn push_chat_message(&mut self, msg: String, which_player: bool) {
@@ -114,7 +120,7 @@ impl GameController {
 
             match msg {
                 Message::TextMessage(text) => self.push_chat_message(text, true),
-                Message::Surrender() => self.state = GameState::GameEnded(true),
+                Message::Surrender() => self.state = GameState::GameEnded(GameResult::PlayerWon),
                 Message::SetPiece((x, y)) => {
                     self.set_piece_on_board(x, y, true).unwrap();
                 }
@@ -130,18 +136,22 @@ impl GameController {
         }
     }
 
-    pub fn check_if_player_won(&self) -> bool {
+    pub fn check_if_player_won(&self) -> GameResult {
         let (p1_pieces, p2_pieces) = self.board.count_pieces();
 
+        if p1_pieces == p2_pieces {
+            return GameResult::Tie
+        }
+
         if self.is_host && p1_pieces > p2_pieces {
-            return true
+            return GameResult::PlayerWon
         }
 
         if !self.is_host && p2_pieces > p1_pieces {
-            return true
+            return GameResult::PlayerWon
         }
 
-        false
+        GameResult::PlayerLost
     }
 
     pub fn restart_game(&mut self) {

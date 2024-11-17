@@ -17,21 +17,23 @@ impl GameEndView {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.centered_and_justified(|ui| {
-                    let end_text = match player_won {
-                        true => "You Win!!",
-                        false => "You lose... better luck next time!"
-                    };
-
-                    ui.heading(
-                        egui::RichText::new(end_text)
-                        .font(self.text_font.clone())
-                        .size(24.0)
-                    );
-
-                    let button = ui.button("Go back");
-                    if button.clicked() {
-                        controller.restart_game()
-                    }
+                    ui.vertical(|ui| {
+                        let end_text = match player_won {
+                            true => "You Win!!",
+                            false => "You lose... better luck next time!"
+                        };
+    
+                        ui.heading(
+                            egui::RichText::new(end_text)
+                            .font(self.text_font.clone())
+                            .size(24.0)
+                        );
+    
+                        let button = ui.button("Go back");
+                        if button.clicked() {
+                            controller.restart_game()
+                        }
+                    });
                 });
             });
         });

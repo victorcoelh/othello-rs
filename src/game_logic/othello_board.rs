@@ -113,7 +113,6 @@ impl OthelloBoard{
         hit_rays.push((file+1..8).map(|y| (rank, y)).collect());
         hit_rays.push((0..file).rev().map(|y| (rank, y)).collect());
 
-        println!("{:?}", hit_rays);
         hit_rays
     }
 }
