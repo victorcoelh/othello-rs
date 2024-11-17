@@ -1,3 +1,4 @@
+use std::cmp;
 use crate::Position;
 
 #[derive(Copy, Clone, Debug)]
@@ -96,6 +97,10 @@ impl OthelloBoard{
 
         for direction in self.cast_rays(rank, file) {
             for (i, (rank, file)) in direction.iter().enumerate() {
+                if let None = self.board_state[*file][*rank] {
+                    break;
+                }
+
                 if current_piece == self.board_state[*file][*rank] {
                     println!("{:?}", &direction[..i]);
                     should_flip.extend_from_slice(&direction[..i]);
@@ -115,33 +120,17 @@ impl OthelloBoard{
         hit_rays.push((0..file).rev().map(|y| (rank, y)).collect());
 
         // diagonals
-        hit_rays.push(
-            (1..8)
-            .map(|x| (rank+x, file+x))
-            .take_while(|(rank, file)| *rank < 8 && *file < 8)
-            .collect()
-        );
+        let limit = cmp::min(7-rank, 7-file);
+        hit_rays.push((1..limit).map(|x| (rank+x, file+x)).collect());
 
-        hit_rays.push(
-            (1..8)
-            .map(|x| (rank+x, file-x))
-            .take_while(|(rank, file)| *rank < 8 && *file >= 0)
-            .collect()
-        );
+        let limit = cmp::min(7-rank, file);
+        hit_rays.push((1..limit).map(|x| (rank+x, file-x)).collect());
 
-        hit_rays.push(
-            (1..8)
-            .map(|x| (rank-x, file+x))
-            .take_while(|(rank, file)| *rank >= 0 && *file < 8)
-            .collect()
-        );
+        let limit = cmp::min(rank, 7-file);
+        hit_rays.push((1..limit).map(|x| (rank-x, file+x)).collect());
 
-        hit_rays.push(
-            (1..8)
-            .map(|x| (rank-x, file-x))
-            .take_while(|(rank, file)| *rank >= 0 && *file >= 0)
-            .collect()
-        );
+        let limit = cmp::min(rank, file);
+        hit_rays.push((1..limit).map(|x| (rank-x, file-x)).collect());
 
         hit_rays
     }
