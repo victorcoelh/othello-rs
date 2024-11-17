@@ -108,10 +108,40 @@ impl OthelloBoard{
     fn cast_rays(&self, rank: usize, file: usize) -> Vec<Vec<Position>> {
         let mut hit_rays: Vec<Vec<Position>> = Vec::new();
 
+        // up, down, right, left
         hit_rays.push((rank+1..8).map(|x| (x, file)).collect());
         hit_rays.push((0..rank).rev().map(|x| (x, file)).collect());
         hit_rays.push((file+1..8).map(|y| (rank, y)).collect());
         hit_rays.push((0..file).rev().map(|y| (rank, y)).collect());
+
+        // diagonals
+        hit_rays.push(
+            (1..8)
+            .map(|x| (rank+x, file+x))
+            .take_while(|(rank, file)| *rank < 8 && *file < 8)
+            .collect()
+        );
+
+        hit_rays.push(
+            (1..8)
+            .map(|x| (rank+x, file-x))
+            .take_while(|(rank, file)| *rank < 8 && *file >= 0)
+            .collect()
+        );
+
+        hit_rays.push(
+            (1..8)
+            .map(|x| (rank-x, file+x))
+            .take_while(|(rank, file)| *rank >= 0 && *file < 8)
+            .collect()
+        );
+
+        hit_rays.push(
+            (1..8)
+            .map(|x| (rank-x, file-x))
+            .take_while(|(rank, file)| *rank >= 0 && *file >= 0)
+            .collect()
+        );
 
         hit_rays
     }
