@@ -57,7 +57,10 @@ impl GameController {
         }
 
         if self.opponent_passed {
-
+            let player_won = self.check_if_player_won();
+            self.state = GameState::GameEnded(player_won);
+            self.controller_tx.as_mut().unwrap().send(Message::GameEnded()).unwrap();
+            return Ok(())
         }
 
         self.player_turn = false;
@@ -107,6 +110,8 @@ impl GameController {
 
         if let Some(msg) = rx.try_recv().ok() {
             println!("got message");
+            self.opponent_passed = false;
+
             match msg {
                 Message::TextMessage(text) => self.push_chat_message(text, true),
                 Message::Surrender() => self.state = GameState::GameEnded(true),
