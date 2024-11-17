@@ -139,6 +139,14 @@ impl GameController {
         false
     }
 
+    pub fn restart_game(&mut self) {
+        self.state = GameState::NoConnection;
+        self.board = OthelloBoard::new();
+        self.chat_messages = Vec::new();
+        self.controller_rx = None;
+        self.controller_tx = None;
+    }
+
     pub fn listen_and_connect(&mut self, addr: &str) -> Result<(), Error> {
         let (connection_tx, controller_rx) = mpsc::channel();
         let (controller_tx, connection_rx) = mpsc::channel();
