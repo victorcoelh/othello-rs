@@ -1,6 +1,6 @@
 use eframe::egui;
 
-use crate::game_controller::GameController;
+use crate::game_controller::{GameController, GameResult};
 
 pub struct GameEndView {
     text_font: egui::FontId
@@ -13,14 +13,15 @@ impl GameEndView {
         }
     }
 
-    pub fn draw(&mut self, ctx: &egui::Context, controller: &mut GameController, player_won: bool) {
+    pub fn draw(&mut self, ctx: &egui::Context, controller: &mut GameController, player_won: GameResult) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.centered_and_justified(|ui| {
                     ui.vertical(|ui| {
                         let end_text = match player_won {
-                            true => "You Win!!",
-                            false => "You lose... better luck next time!"
+                            GameResult::PlayerWon => "You Win! Congratulations!",
+                            GameResult::PlayerLost => "You lose... better luck next time!",
+                            GameResult::Tie => "The game tied. Better luck next time!"
                         };
     
                         ui.heading(
