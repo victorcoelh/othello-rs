@@ -26,7 +26,6 @@ impl PeerToPeerConnection {
     }
 
     pub fn send_message(&mut self, message: Message) -> Result<()> {
-        println!("sent message");
         self.client.write_all(&message.to_bytes())
     }
 

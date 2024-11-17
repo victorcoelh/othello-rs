@@ -184,6 +184,7 @@ impl GameController {
         });
 
         self.state = GameState::Playing;
+        self.player_turn = true;
         self.is_host = true;
         Ok(())
     }
