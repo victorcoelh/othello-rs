@@ -23,7 +23,8 @@ impl PartialEq for OthelloPiece {
 }
 
 pub struct OthelloBoard{
-    board_state: [[Option<OthelloPiece>; 8]; 8]
+    board_state: [[Option<OthelloPiece>; 8]; 8],
+    last_board_state: [[Option<OthelloPiece>; 8]; 8]
 }
 
 impl OthelloBoard{
@@ -34,7 +35,7 @@ impl OthelloBoard{
         board[4][3] = Some(OthelloPiece::new(0));
         board[4][4] = Some(OthelloPiece::new(1));
 
-        OthelloBoard { board_state: board }
+        OthelloBoard { board_state: board, last_board_state: board.clone() }
     }
 
     pub fn get_piece_at(&self, rank: usize, file: usize) -> Option<u8>{
@@ -52,6 +53,7 @@ impl OthelloBoard{
             empty squares.")
         }
         
+        self.last_board_state = self.board_state.clone();
         let new_piece = OthelloPiece::new(which_player);
         self.board_state[file][rank] = Some(new_piece);
         self.flip_pieces_if_needed(rank, file);
@@ -82,6 +84,10 @@ impl OthelloBoard{
         } 
     }
 
+    pub fn revert_to_last_state(&mut self) {
+        self.board_state = self.last_board_state;
+    }
+
     fn flip_pieces_if_needed(&mut self, rank: usize, file: usize) {
         let should_flip = self.check_for_flanks(rank, file);
         let current_state = self.board_state[file][rank].unwrap().state;
@@ -102,8 +108,8 @@ impl OthelloBoard{
                 }
 
                 if current_piece == self.board_state[*file][*rank] {
-                    println!("{:?}", &direction[..i]);
                     should_flip.extend_from_slice(&direction[..i]);
+                    break;
                 }
             }
         }

@@ -18,7 +18,7 @@ impl GameEndView {
     pub fn draw(&mut self, ctx: &egui::Context, controller: &mut GameController, player_won: GameResult) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                ui.add_space(250.0);
+                ui.add_space(400.0);
 
                 let end_text = match player_won {
                     GameResult::PlayerWon => "You Win! Congratulations",

@@ -109,6 +109,12 @@ impl GameController {
         Ok(())
     }
 
+    pub fn undo_last_move(&mut self) {
+        self.board.revert_to_last_state();
+
+        self.controller_tx.as_mut().unwrap().send(Message::UndoMove()).unwrap();
+    }
+
     pub fn check_for_new_message(&mut self) {
         let rx = match self.controller_rx.as_mut() {
             Some(rx) => rx,
@@ -122,6 +128,7 @@ impl GameController {
             match msg {
                 Message::TextMessage(text) => self.push_chat_message(text, true),
                 Message::Surrender() => self.state = GameState::GameEnded(GameResult::PlayerWon),
+                Message::UndoMove() => self.board.revert_to_last_state(),
                 Message::SetPiece((x, y)) => {
                     self.set_piece_on_board(x, y, true).unwrap();
                 }

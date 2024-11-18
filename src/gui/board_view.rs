@@ -199,8 +199,8 @@ impl BoardView {
             .show(ui, |ui| {
                 ui.set_max_width(300.0);
                 ui.vertical_centered_justified(|ui| {
-                    if self.button_widget(ui, "Undo Move").clicked() {
-                        println!("Undo");
+                    if self.button_widget(ui, "Undo Last Move").clicked() {
+                        controller.undo_last_move();
                     }
 
                     if self.button_widget(ui, "Surrender").clicked() {
