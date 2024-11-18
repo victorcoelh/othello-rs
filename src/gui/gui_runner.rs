@@ -1,3 +1,5 @@
+use std::sync::mpsc::{self, Receiver, Sender};
+
 use eframe::egui;
 
 use super::{board_view::BoardView, main_menu_view::MainMenuView, game_end_view::GameEndView};
@@ -17,11 +19,14 @@ pub fn build_game_window(controller: GameController) -> eframe::Result {
         Box::new(|cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
             Ok(Box::new(menu))
-        }))
+        })
+    )
 }
 
 struct GuiRunner {
     controller: GameController,
+    error_tx: Sender<String>,
+    error_rx: Receiver<String>,
     board_view: BoardView,
     main_menu_view: MainMenuView,
     game_end_view: GameEndView
@@ -30,12 +35,18 @@ struct GuiRunner {
 impl eframe::App for GuiRunner {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         match self.controller.get_state() {
-            GameState::NoConnection => self.main_menu_view.draw(ctx, &mut self.controller),
+            GameState::NoConnection => {
+                self.main_menu_view.draw(ctx, &mut self.controller, self.error_tx.clone())
+            },
             GameState::Playing => self.board_view.draw(ctx, &mut self.controller),
             GameState::GameEnded(player_won) => {
                 let player_won = player_won.clone();
                 self.game_end_view.draw(ctx, &mut self.controller, player_won)
             }
+        };
+
+        if let Some(error) = self.error_rx.try_recv().ok() {
+            self.error_window(ctx, &error);
         }
 
         self.controller.check_for_new_message();
@@ -44,11 +55,21 @@ impl eframe::App for GuiRunner {
 
 impl GuiRunner {
     fn new(controller: GameController) -> Self {
+        let (error_tx, error_rx) = mpsc::channel();
+
         GuiRunner {
             controller: controller,
+            error_tx: error_tx,
+            error_rx: error_rx,
             board_view: BoardView::new(),
             main_menu_view: MainMenuView::new(),
             game_end_view: GameEndView::new()
         }
+    }
+
+    fn error_window(&mut self, ctx: &egui::Context, error: &String) {
+        egui::Window::new("Error").show(ctx, |ui| {
+            ui.heading(error);
+        });
     }
 }

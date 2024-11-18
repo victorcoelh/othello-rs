@@ -18,7 +18,7 @@ impl GameEndView {
     pub fn draw(&mut self, ctx: &egui::Context, controller: &mut GameController, player_won: GameResult) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                ui.add_space(400.0);
+                ui.add_space(350.0);
 
                 let end_text = match player_won {
                     GameResult::PlayerWon => "You Win! Congratulations",
@@ -32,11 +32,14 @@ impl GameEndView {
                     .size(24.0)
                 );
 
+                ui.add_space(20.0);
+
                 let button = ui.add(
                     egui::Button::new("Go Back")
                         .fill(BUTTON_COLOR)
                         .frame(false)
                         .min_size(Vec2::new(100.0, 40.0))
+                        .rounding(5.0)
                 );
 
                 if button.clicked() {

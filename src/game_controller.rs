@@ -66,27 +66,24 @@ impl GameController {
         if self.opponent_passed {
             let player_won = self.check_if_player_won();
             self.state = GameState::GameEnded(player_won);
-            self.controller_tx.as_mut().unwrap().send(Message::GameEnded()).unwrap();
+            self.send_message_to_connection(Message::GameEnded());
             return Ok(())
         }
 
         self.player_turn = false;
-        self.controller_tx.as_mut().unwrap().send(Message::PassTurn()).unwrap();
+        self.send_message_to_connection(Message::PassTurn());
         Ok(())
     }
 
     pub fn surrender(&mut self) {
-        self.controller_tx.as_mut().unwrap().send(Message::Surrender()).unwrap();
+        self.send_message_to_connection(Message::Surrender());
         self.state = GameState::GameEnded(GameResult::PlayerLost);
     }
 
     pub fn push_chat_message(&mut self, msg: String, which_player: bool) {
         let msg_with_prefix = match which_player {
             false => {
-                self.controller_tx.as_mut()
-                    .unwrap()
-                    .send(Message::TextMessage(msg.clone()))
-                    .unwrap();
+                self.send_message_to_connection(Message::TextMessage(msg.clone()));
                 format!("player: {}", msg)
             },
             true => format!("opponent: {}", msg)
@@ -100,7 +97,7 @@ impl GameController {
             if !self.player_turn {
                 return Err("Wait for your opponent's turn!");
             }
-            self.controller_tx.as_mut().unwrap().send(Message::SetPiece((rank, file))).unwrap();
+            self.send_message_to_connection(Message::SetPiece((rank, file)));
         }
 
         let which_player = self.swap_player_if_not_host(which_player);
@@ -111,8 +108,9 @@ impl GameController {
 
     pub fn undo_last_move(&mut self) {
         self.board.revert_to_last_state();
+        self.player_turn = !self.player_turn;
 
-        self.controller_tx.as_mut().unwrap().send(Message::UndoMove()).unwrap();
+        self.send_message_to_connection(Message::UndoMove());
     }
 
     pub fn check_for_new_message(&mut self) {
@@ -128,10 +126,13 @@ impl GameController {
             match msg {
                 Message::TextMessage(text) => self.push_chat_message(text, true),
                 Message::Surrender() => self.state = GameState::GameEnded(GameResult::PlayerWon),
-                Message::UndoMove() => self.board.revert_to_last_state(),
                 Message::SetPiece((x, y)) => {
                     self.set_piece_on_board(x, y, true).unwrap();
                 }
+                Message::UndoMove() => {
+                    self.board.revert_to_last_state();
+                    self.player_turn = !self.player_turn;
+                },
                 Message::GameEnded() => {
                     let player_won = self.check_if_player_won();
                     self.state = GameState::GameEnded(player_won);
@@ -170,10 +171,11 @@ impl GameController {
         self.controller_tx = None;
     }
 
-    pub fn listen_and_connect(&mut self, addr: &str) -> Result<(), Error> {
+    pub fn listen_and_connect(&mut self, addr: &str, error_tx: mpsc::Sender<String>) -> Result<(), Error> {
         let (connection_tx, controller_rx) = mpsc::channel();
         let (controller_tx, connection_rx) = mpsc::channel();
-        let mut connection = PeerToPeerConnection::listen_to(addr, 3.0)?;
+        let mut connection =
+            PeerToPeerConnection::listen_to(addr, 3.0, error_tx)?;
 
         self.controller_rx = Some(controller_rx);
         self.controller_tx = Some(controller_tx);
@@ -181,11 +183,11 @@ impl GameController {
         thread::spawn(move || {
             loop {
                 if let Some(rcv_msg) = connection.wait_for_message() {
-                    connection_tx.send(rcv_msg).unwrap();
+                    connection_tx.send(rcv_msg).unwrap(); // can safely unwrap
                 }
     
                 if let Some(send_msg) = connection_rx.try_recv().ok() {
-                    connection.send_message(send_msg).unwrap();
+                    connection.send_message(send_msg);
                 }
             }
         });
@@ -196,10 +198,11 @@ impl GameController {
         Ok(())
     }
 
-    pub fn connect(&mut self, addr: &str) -> Result<(), Error> {
+    pub fn connect(&mut self, addr: &str, error_tx: mpsc::Sender<String>) -> Result<(), Error> {
         let (connection_tx, controller_rx) = mpsc::channel();
         let (controller_tx, connection_rx) = mpsc::channel();
-        let mut connection = PeerToPeerConnection::connect_to(addr, 1.0)?;
+        let mut connection =
+            PeerToPeerConnection::connect_to(addr, 1.0, error_tx)?;
 
         self.controller_rx = Some(controller_rx);
         self.controller_tx = Some(controller_tx);
@@ -207,11 +210,11 @@ impl GameController {
         thread::spawn(move || {
             loop {
                 if let Some(rcv_msg) = connection.wait_for_message() {
-                    connection_tx.send(rcv_msg).unwrap();
+                    connection_tx.send(rcv_msg).unwrap(); // can safely unwrap
                 }
     
                 if let Some(send_msg) = connection_rx.try_recv().ok() {
-                    connection.send_message(send_msg).unwrap();
+                    connection.send_message(send_msg);
                 }
             }
         });
@@ -219,6 +222,10 @@ impl GameController {
         self.state = GameState::Playing;
         self.player_turn = false;
         Ok(())
+    }
+
+    fn send_message_to_connection(&mut self, message: Message) {
+        self.controller_tx.as_mut().unwrap().send(message).unwrap();
     }
 
     fn swap_player_if_not_host(&self, which_player: bool) -> bool {
