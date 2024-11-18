@@ -66,6 +66,10 @@ impl MainMenuView {
     fn error_window(&mut self, ctx: &egui::Context, error: &String) {
         egui::Window::new("Error").show(ctx, |ui| {
             ui.heading(error);
+
+            if ui.button("Ok").clicked() {
+                self.error = None;
+            }
         });
     }
 }

@@ -25,6 +25,7 @@ pub fn build_game_window(controller: GameController) -> eframe::Result {
 
 struct GuiRunner {
     controller: GameController,
+    error: Option<String>,
     error_tx: Sender<String>,
     error_rx: Receiver<String>,
     board_view: BoardView,
@@ -46,6 +47,11 @@ impl eframe::App for GuiRunner {
         };
 
         if let Some(error) = self.error_rx.try_recv().ok() {
+            println!("has error");
+            self.error = Some(error);
+        }
+
+        if let Some(error) = self.error.clone() {
             self.error_window(ctx, &error);
         }
 
@@ -59,6 +65,7 @@ impl GuiRunner {
 
         GuiRunner {
             controller: controller,
+            error: None,
             error_tx: error_tx,
             error_rx: error_rx,
             board_view: BoardView::new(),
@@ -70,6 +77,12 @@ impl GuiRunner {
     fn error_window(&mut self, ctx: &egui::Context, error: &String) {
         egui::Window::new("Error").show(ctx, |ui| {
             ui.heading(error);
+            ui.add_space(10.0);
+
+            if ui.button("Go Back to Menu").clicked() {
+                self.error = None;
+                self.controller.restart_game();
+            }
         });
     }
 }
