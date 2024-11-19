@@ -77,7 +77,7 @@ impl GameController {
             self.chat_messages.push(format!("ERROR: {}", error));
         }
 
-        self.player_turn = false;
+        self.player_turn = !self.player_turn;
         self.opponent_passed = false;
     }
 

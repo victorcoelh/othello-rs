@@ -83,6 +83,10 @@ impl GuiRunner {
                 self.error = None;
                 self.controller.restart_game();
             }
+
+            if ui.button("Ok").clicked() {
+                self.error = None;
+            }
         });
     }
 }
