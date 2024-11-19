@@ -75,7 +75,7 @@ impl GuiRunner {
     }
 
     fn error_window(&mut self, ctx: &egui::Context, error: &String) {
-        egui::Window::new("Error").show(ctx, |ui| {
+        egui::Window::new("Connection Error").show(ctx, |ui| {
             ui.heading(error);
             ui.add_space(10.0);
 

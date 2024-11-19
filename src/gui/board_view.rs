@@ -45,7 +45,6 @@ impl BoardView {
                     ui.set_min_width(ui.available_width());
                     ui.add_space((ui.available_width() / 2.0) - ((8.0*48.0)/2.0) - 45.0);
                     self.board_widget(ui, controller);
-                    ui.add_space(25.0);
 
                     ui.vertical_centered(|ui| {
                         let (yours, opponents) = match controller.get_is_host() {
@@ -247,7 +246,7 @@ impl BoardView {
     }
 
     fn error_widget(&mut self, ui: &mut Ui) {
-        if self.timer_start.elapsed().unwrap_or(Duration::ZERO) > Duration::from_secs(10) {
+        if self.timer_start.elapsed().unwrap_or(Duration::ZERO) > Duration::from_secs(6) {
             return ()
         }
 

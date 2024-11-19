@@ -29,7 +29,7 @@ impl PeerToPeerConnection {
 
     pub fn send_message(&mut self, message: Message) -> Result<()> {
         self.client.write_all(&message.to_bytes()).map_err(|err| {
-            self.error_tx.send(format!("Error while sending message: {}", err)).unwrap();
+            self.error_tx.send(format!("Error while sending message:\n\n{}", err)).unwrap();
             err
         })
     }
