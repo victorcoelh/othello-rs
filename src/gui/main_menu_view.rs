@@ -7,23 +7,17 @@ use crate::game_controller::GameController;
 
 pub struct MainMenuView{
     socket_addr: String,
-    error: Option<String>,
 }
 
 impl MainMenuView {
     pub fn new() -> Self {
         MainMenuView {
             socket_addr: "192.168.56.101:8069".to_string(),
-            error: None
         }
     }
 
     pub fn draw(&mut self, ctx: &egui::Context, controller: &mut GameController, error_tx: Sender<String>){
         self.main_window(ctx, controller, error_tx);
-
-        if let Some(error) = self.error.clone() {
-            self.error_window(ctx, &error);
-        }
     }
 
     fn main_window(&mut self, ctx: &egui::Context, controller: &mut GameController, error_tx: Sender<String>) {
@@ -43,33 +37,19 @@ impl MainMenuView {
                 );
         
                 if connect_button.clicked() {
-                    if let Err(error) = controller.connect(&self.socket_addr, error_tx) {
-                        self.error = Some(
-                            format!("Error while trying to connect to socket {}: {}",
-                            &self.socket_addr, error)
-                        )
+                    if let Err(error) = controller.connect(&self.socket_addr, error_tx.clone()) {
+                        error_tx.send(format!("Error while trying to connect to socket {}:\n\n{}",
+                            &self.socket_addr, error)).unwrap();
                     };
                 } else {
                     if wait_button.clicked() {
-                        if let Err(error) = controller.listen_and_connect(&self.socket_addr, error_tx) {
-                            self.error = Some(
-                                format!("Error while trying to bind to socket {}: {}",
-                                &self.socket_addr, error)
-                            )
+                        if let Err(error) = controller.listen_and_connect(&self.socket_addr, error_tx.clone()) {
+                            error_tx.send(format!("Error while trying to bind to socket {}:\n\n{}",
+                                &self.socket_addr, error)).unwrap();
                         }
                     }
                 }
             })
-        });
-    }
-
-    fn error_window(&mut self, ctx: &egui::Context, error: &String) {
-        egui::Window::new("Error").show(ctx, |ui| {
-            ui.heading(error);
-
-            if ui.button("Ok").clicked() {
-                self.error = None;
-            }
         });
     }
 }

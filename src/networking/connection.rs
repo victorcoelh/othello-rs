@@ -45,7 +45,6 @@ impl PeerToPeerConnection {
                         let error_msg = "Invalid message received from peer. Check if both \
                         are running the same game version.".to_string();
                         self.error_tx.send(error_msg).unwrap();
-
                         None
                     }
                 }

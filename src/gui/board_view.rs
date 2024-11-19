@@ -26,6 +26,7 @@ impl BoardView {
             text_font: egui::FontId::proportional(16.0),
             rank_font: egui::FontId::monospace(18.0),
             error: None,
+            warning: None,
             timer_start: SystemTime::now(),
          }
     }
@@ -258,7 +259,7 @@ impl BoardView {
                 if let Some(error) = self.error {
                     ui.label(egui::RichText::new(error)
                         .color(Color32::LIGHT_RED)
-                        .size(14.0));
+                        .size(18.0));
                 }
             });
     }
