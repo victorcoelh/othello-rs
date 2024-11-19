@@ -222,7 +222,15 @@ impl GameController {
         self.controller_tx = Some(controller_tx);
 
         thread::spawn(move || {
+            let mut start = SystemTime::now();
+            let time_limit = Duration::from_secs(5);
+
             loop {
+                if start.elapsed().unwrap_or(Duration::ZERO) > time_limit {
+                    connection.test_connection();
+                    start = SystemTime::now();
+                }
+
                 if let Some(rcv_msg) = connection.wait_for_message() {
                     connection_tx.send(rcv_msg).unwrap(); // can safely unwrap
                 }

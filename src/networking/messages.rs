@@ -43,6 +43,7 @@ impl Message {
             b'3' => Ok(Message::Surrender()),
             b'4' => Ok(Message::GameEnded()),
             b'5' => Ok(Message::UndoMove()),
+            b'6' => Ok(Message::TestConnection()),
             _ => Err("Non-existant message type received")
         }
     }
