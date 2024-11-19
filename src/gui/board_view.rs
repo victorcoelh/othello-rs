@@ -45,17 +45,17 @@ impl BoardView {
                     ui.set_min_width(ui.available_width());
                     ui.add_space((ui.available_width() / 2.0) - ((8.0*48.0)/2.0) - 45.0);
                     self.board_widget(ui, controller);
-                    ui.add_space(50.0);
+                    ui.add_space(25.0);
 
                     ui.vertical_centered(|ui| {
                         let (yours, opponents) = match controller.get_is_host() {
                             true => (BLACK_PIECE.clone(), WHITE_PIECE.clone()),
-                            false => (BLACK_PIECE.clone(), WHITE_PIECE.clone()),
+                            false => (WHITE_PIECE.clone(), BLACK_PIECE.clone()),
                         };
 
-                        ui.label("you");
+                        ui.heading("yours");
                         ui.add_sized([80.0, 80.0], egui::Image::new(yours));
-                        ui.label("opponent");
+                        ui.heading("opponent");
                         ui.add_sized([80.0, 80.0], egui::Image::new(opponents));
                     });
                 });
@@ -156,6 +156,7 @@ impl BoardView {
                                 if let Err(e) = controller.set_piece_on_board(i, j, false) {
                                     println!("error: {e}");
                                     self.error = Some(e);
+                                    self.timer_start = SystemTime::now();
                                 }
                             }
                         }

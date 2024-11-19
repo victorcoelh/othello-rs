@@ -125,7 +125,6 @@ impl GameController {
         };
 
         if let Some(msg) = rx.try_recv().ok() {
-            println!("got message");
             self.opponent_passed = false;
 
             match msg {
