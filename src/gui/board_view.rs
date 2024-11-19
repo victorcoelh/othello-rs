@@ -2,7 +2,7 @@ use core::f32;
 
 use eframe::egui::{self, Color32, Layout, Ui, Vec2};
 
-use crate::{game_controller::GameController, Color};
+use crate::game_controller::GameController;
 
 static BORDER_COLOR: Color32 = Color32::from_rgb(0x54, 0x77, 0x35);
 static BOARD_COLOR: Color32 = Color32::from_rgb(0x26, 0x70, 0x39);
@@ -56,6 +56,7 @@ impl BoardView {
 
                 ui.with_layout(Layout::right_to_left(egui::Align::BOTTOM), |ui| {
                     self.menu_widget(ui, controller);
+                    ui.add_space(50.0);
                     self.chat_widget(ui, controller);
                 });
             });

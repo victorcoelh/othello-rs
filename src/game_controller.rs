@@ -27,7 +27,6 @@ pub struct GameController {
     chat_messages: Vec<String>,
     controller_tx: Option<mpsc::Sender<Message>>,
     controller_rx: Option<mpsc::Receiver<Message>>,
-    pub warning: Option<String>,
 }
 
 impl GameController {
@@ -41,7 +40,6 @@ impl GameController {
             chat_messages: Vec::new(),
             controller_tx: None,
             controller_rx: None,
-            warning: None,
         }
     }
 
@@ -69,6 +67,7 @@ impl GameController {
         if !which_player {
             if !self.player_turn {
                 self.chat_messages.push("ERROR: Wait for your opponent's turn!".to_string());
+                return ()
             }
             self.send_message_to_connection(Message::SetPiece((rank, file)));
         }
@@ -84,6 +83,7 @@ impl GameController {
     pub fn try_pass_turn(&mut self) {
         if !self.player_turn {
             self.chat_messages.push("ERROR: Can't pass if it is not your turn!".to_string());
+            return ();
         }
 
         if self.opponent_passed {
@@ -138,6 +138,7 @@ impl GameController {
                 Message::UndoMove() => {
                     self.board.revert_to_last_state();
                     self.player_turn = !self.player_turn;
+                    self.chat_messages.push("WARNING: The last move was undone by the opponent.".to_string());
                 },
                 Message::GameEnded() => {
                     let player_won = self.check_if_player_won();
@@ -146,6 +147,7 @@ impl GameController {
                 Message::PassTurn() => {
                     self.player_turn = !self.player_turn;
                     self.opponent_passed = true;
+                    self.chat_messages.push("WARNING: Opponent forfeited their turn.".to_string());
                 },
             }
         }
