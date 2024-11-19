@@ -54,4 +54,8 @@ impl PeerToPeerConnection {
             Err(_) => None
         }
     }
+
+    pub fn test_connection(&mut self) {
+        self.send_message(Message::TestConnection());
+    }
 }

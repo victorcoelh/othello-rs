@@ -2,6 +2,7 @@ use crate::game_logic::OthelloBoard;
 use crate::networking::{Message, PeerToPeerConnection};
 use std::io::Error;
 use std::sync::mpsc;
+use std::time::{Duration, SystemTime};
 use std::thread;
 
 #[derive(Copy, Clone)]
@@ -56,6 +57,10 @@ impl GameController {
     
     pub fn get_player_turn(&self) -> bool {
         self.player_turn
+    }
+
+    pub fn get_is_host(&self) -> bool {
+        self.is_host
     }
 
     pub fn pass_turn(&mut self) -> Result<(), &'static str> {
@@ -126,9 +131,10 @@ impl GameController {
             match msg {
                 Message::TextMessage(text) => self.push_chat_message(text, true),
                 Message::Surrender() => self.state = GameState::GameEnded(GameResult::PlayerWon),
+                Message::TestConnection() => (),
                 Message::SetPiece((x, y)) => {
                     self.set_piece_on_board(x, y, true).unwrap();
-                }
+                },
                 Message::UndoMove() => {
                     self.board.revert_to_last_state();
                     self.player_turn = !self.player_turn;
@@ -175,13 +181,21 @@ impl GameController {
         let (connection_tx, controller_rx) = mpsc::channel();
         let (controller_tx, connection_rx) = mpsc::channel();
         let mut connection =
-            PeerToPeerConnection::listen_to(addr, 3.0, error_tx)?;
+            PeerToPeerConnection::listen_to(addr, 1.0, error_tx)?;
 
         self.controller_rx = Some(controller_rx);
         self.controller_tx = Some(controller_tx);
 
         thread::spawn(move || {
+            let mut start = SystemTime::now();
+            let time_limit = Duration::from_secs(5);
+
             loop {
+                if start.elapsed().unwrap_or(Duration::ZERO) > time_limit {
+                    connection.test_connection();
+                    start = SystemTime::now();
+                }
+
                 if let Some(rcv_msg) = connection.wait_for_message() {
                     connection_tx.send(rcv_msg).unwrap(); // can safely unwrap
                 }

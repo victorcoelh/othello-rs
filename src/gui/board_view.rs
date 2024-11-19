@@ -1,6 +1,7 @@
 use core::f32;
 
 use eframe::egui::{self, Color32, Layout, Ui, Vec2};
+use std::time::{Duration, SystemTime};
 
 use crate::game_controller::GameController;
 
@@ -13,6 +14,7 @@ pub struct BoardView {
     text_font: egui::FontId,
     rank_font: egui::FontId,
     error: Option<&'static str>,
+    timer_start: SystemTime
 }
 
 impl BoardView {
@@ -21,7 +23,8 @@ impl BoardView {
             chatbox_text: String::new(),
             text_font: egui::FontId::proportional(16.0),
             rank_font: egui::FontId::monospace(18.0),
-            error: None
+            error: None,
+            timer_start: SystemTime::now(),
          }
     }
 
@@ -36,7 +39,30 @@ impl BoardView {
                 ui.heading(turn_text);
                 ui.add_space(50.0);
 
-                self.board_widget(ui, controller);
+                ui.horizontal_top(|ui| {
+                    ui.set_min_width(ui.available_width());
+                    ui.add_space((ui.available_width() / 2.0) - ((8.0*48.0)/2.0) - 45.0);
+                    self.board_widget(ui, controller);
+                    ui.add_space(50.0);
+
+                    ui.vertical_centered(|ui| {
+                        let (yours, opponents) = match controller.get_is_host() {
+                            true => {
+                                (egui::include_image!("../../assets/black_piece.png"),
+                                egui::include_image!("../../assets/white_piece.png"))
+                            },
+                            false => {
+                                (egui::include_image!("../../assets/white_piece.png"),
+                                egui::include_image!("../../assets/black_piece.png"))
+                            },
+                        };
+
+                        ui.label("you");
+                        ui.add(egui::Image::new(yours));
+                        ui.label("opponent");
+                        ui.add(egui::Image::new(opponents));
+                    });
+                });
                 
                 ui.add_space(20.0);
                 self.error_widget(ui);
@@ -51,11 +77,7 @@ impl BoardView {
     }
 
     fn board_widget(&mut self, ui: &mut Ui, controller: &mut GameController) {
-        ui.horizontal_top(|ui| {
-            ui.set_min_width(ui.available_width());
-            ui.add_space((ui.available_width() / 2.0) - ((8.0*48.0)/2.0) - 45.0);
-
-            egui::Frame::none()
+        egui::Frame::none()
             .fill(BOARD_COLOR)
             .rounding(5.0)
             .inner_margin(10.0)
@@ -110,7 +132,6 @@ impl BoardView {
                     });
                 });
             });
-        });
     }
 
     fn cell_widget(&mut self, ui: &mut Ui, i: usize, j: usize, controller: &mut GameController) {
@@ -210,6 +231,7 @@ impl BoardView {
                     if self.button_widget(ui, "Pass Turn").clicked() {
                         if let Err(error) = controller.pass_turn() {
                             self.error = Some(error);
+                            self.timer_start = SystemTime::now();
                         }
                     }
                 });
@@ -228,6 +250,10 @@ impl BoardView {
     }
 
     fn error_widget(&mut self, ui: &mut Ui) {
+        if self.timer_start.elapsed().unwrap_or(Duration::ZERO) > Duration::from_secs(10) {
+            return ()
+        }
+
         egui::Frame::none()
             .show(ui, |ui| {
                 ui.set_min_height(20.0);

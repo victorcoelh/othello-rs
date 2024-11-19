@@ -8,7 +8,8 @@ pub enum Message {
     PassTurn(),
     Surrender(),
     GameEnded(),
-    UndoMove()
+    UndoMove(),
+    TestConnection()
 }
 
 impl Message {
@@ -20,6 +21,7 @@ impl Message {
             Self::Surrender() => "3".to_string(),
             Self::GameEnded() => "4".to_string(),
             Self::UndoMove() => "5".to_string(),
+            Self::TestConnection() => "6".to_string(),
         }.into_bytes();
 
         bytes.resize(BUFFER_SIZE, 0); // pads the buffer with NULL characters
