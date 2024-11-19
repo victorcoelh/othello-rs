@@ -54,9 +54,9 @@ impl BoardView {
                     });
                 });
 
+                ui.add_space(50.0);
                 ui.with_layout(Layout::right_to_left(egui::Align::BOTTOM), |ui| {
                     self.menu_widget(ui, controller);
-                    ui.add_space(50.0);
                     self.chat_widget(ui, controller);
                 });
             });
@@ -183,7 +183,7 @@ impl BoardView {
                             ui.with_layout(Layout::top_down_justified(egui::Align::LEFT), |ui| {
                                 for text in controller.get_chat_messages() {
                                     let color = if text.contains("WARNING:") {
-                                        Color32::LIGHT_YELLOW
+                                        Color32::YELLOW
                                     } else if text.contains("ERROR:") {
                                         Color32::LIGHT_RED
                                     } else {

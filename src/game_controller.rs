@@ -77,7 +77,8 @@ impl GameController {
             self.chat_messages.push(format!("ERROR: {}", error));
         }
 
-        self.player_turn = !self.player_turn;
+        self.player_turn = false;
+        self.opponent_passed = false;
     }
 
     pub fn try_pass_turn(&mut self) {
@@ -93,6 +94,7 @@ impl GameController {
         }
 
         self.player_turn = false;
+        self.opponent_passed = false;
         self.send_message_to_connection(Message::PassTurn());
     }
 
@@ -115,6 +117,7 @@ impl GameController {
     pub fn undo_last_move(&mut self) {
         self.board.revert_to_last_state();
         self.player_turn = !self.player_turn;
+        self.opponent_passed = false;
 
         self.send_message_to_connection(Message::UndoMove());
     }
@@ -126,8 +129,6 @@ impl GameController {
         };
 
         if let Some(msg) = rx.try_recv().ok() {
-            self.opponent_passed = false;
-
             match msg {
                 Message::TextMessage(text) => self.push_chat_message(text, true),
                 Message::Surrender() => self.state = GameState::GameEnded(GameResult::PlayerWon),
@@ -165,7 +166,7 @@ impl GameController {
         let (connection_tx, controller_rx) = mpsc::channel();
         let (controller_tx, connection_rx) = mpsc::channel();
         let mut connection =
-            PeerToPeerConnection::listen_to(addr, 1.0, error_tx)?;
+            PeerToPeerConnection::listen_to(addr, 0.5, error_tx)?;
 
         self.controller_rx = Some(controller_rx);
         self.controller_tx = Some(controller_tx);
