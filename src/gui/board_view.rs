@@ -8,6 +8,8 @@ use crate::game_controller::GameController;
 static BORDER_COLOR: Color32 = Color32::from_rgb(0x54, 0x77, 0x35);
 static BOARD_COLOR: Color32 = Color32::from_rgb(0x26, 0x70, 0x39);
 static BUTTON_COLOR: Color32 = Color32::from_rgb(0xFF, 0x5A, 0x36);
+static BLACK_PIECE: egui::ImageSource = egui::include_image!("../../assets/black_piece.png");
+static WHITE_PIECE: egui::ImageSource = egui::include_image!("../../assets/white_piece.png");
 
 pub struct BoardView {
     chatbox_text: String,
@@ -47,20 +49,14 @@ impl BoardView {
 
                     ui.vertical_centered(|ui| {
                         let (yours, opponents) = match controller.get_is_host() {
-                            true => {
-                                (egui::include_image!("../../assets/black_piece.png"),
-                                egui::include_image!("../../assets/white_piece.png"))
-                            },
-                            false => {
-                                (egui::include_image!("../../assets/white_piece.png"),
-                                egui::include_image!("../../assets/black_piece.png"))
-                            },
+                            true => (BLACK_PIECE.clone(), WHITE_PIECE.clone()),
+                            false => (BLACK_PIECE.clone(), WHITE_PIECE.clone()),
                         };
 
                         ui.label("you");
-                        ui.add(egui::Image::new(yours));
+                        ui.add_sized([80.0, 80.0], egui::Image::new(yours));
                         ui.label("opponent");
-                        ui.add(egui::Image::new(opponents));
+                        ui.add_sized([80.0, 80.0], egui::Image::new(opponents));
                     });
                 });
                 
@@ -146,8 +142,8 @@ impl BoardView {
                     ui.vertical_centered_justified(|ui| {
                         if let Some(piece) = controller.get_piece_at(i, j) {
                             let image = match piece {
-                                0 => egui::include_image!("../../assets/black_piece.png"),
-                                1 => egui::include_image!("../../assets/white_piece.png"),
+                                0 => BLACK_PIECE.clone(),
+                                1 => WHITE_PIECE.clone(),
                                 _ => panic!("Invalid piece type at position {i}:{j}")
                             };
                             ui.add(egui::Image::new(image).sense(egui::Sense::click()));

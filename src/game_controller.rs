@@ -192,7 +192,7 @@ impl GameController {
 
             loop {
                 if start.elapsed().unwrap_or(Duration::ZERO) > time_limit {
-                    connection.test_connection();
+                    connection.test_connection().unwrap();
                     start = SystemTime::now();
                 }
 
@@ -201,7 +201,7 @@ impl GameController {
                 }
     
                 if let Some(send_msg) = connection_rx.try_recv().ok() {
-                    connection.send_message(send_msg);
+                    connection.send_message(send_msg).unwrap();
                 }
             }
         });
@@ -223,11 +223,11 @@ impl GameController {
 
         thread::spawn(move || {
             let mut start = SystemTime::now();
-            let time_limit = Duration::from_secs(5);
+            let time_limit = Duration::from_secs_f32(2.5);
 
             loop {
                 if start.elapsed().unwrap_or(Duration::ZERO) > time_limit {
-                    connection.test_connection();
+                    connection.test_connection().unwrap();
                     start = SystemTime::now();
                 }
 
@@ -236,7 +236,7 @@ impl GameController {
                 }
     
                 if let Some(send_msg) = connection_rx.try_recv().ok() {
-                    connection.send_message(send_msg);
+                    connection.send_message(send_msg).unwrap();
                 }
             }
         });

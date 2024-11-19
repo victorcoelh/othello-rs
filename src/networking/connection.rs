@@ -27,12 +27,11 @@ impl PeerToPeerConnection {
         Ok(PeerToPeerConnection { client: stream, error_tx: error_tx })
     }
 
-    pub fn send_message(&mut self, message: Message) {
-        if let Err(error) = self.client.write_all(&message.to_bytes()) {
-            // we can unwrap here, as the receiver is held by the app's main GUI runner, and will
-            // only be dropped if the app is closed.
-            self.error_tx.send(format!("Error while sending message: {}", error)).unwrap()
-        }
+    pub fn send_message(&mut self, message: Message) -> Result<()> {
+        self.client.write_all(&message.to_bytes()).map_err(|err| {
+            self.error_tx.send(format!("Error while sending message: {}", err)).unwrap();
+            err
+        })
     }
 
     pub fn wait_for_message(&mut self) -> Option<Message> {
@@ -55,7 +54,7 @@ impl PeerToPeerConnection {
         }
     }
 
-    pub fn test_connection(&mut self) {
-        self.send_message(Message::TestConnection());
+    pub fn test_connection(&mut self) -> Result<()> {
+        self.send_message(Message::TestConnection())
     }
 }
