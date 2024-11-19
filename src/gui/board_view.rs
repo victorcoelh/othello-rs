@@ -7,12 +7,13 @@ use crate::game_controller::GameController;
 static BORDER_COLOR: Color32 = Color32::from_rgb(0x54, 0x77, 0x35);
 static BOARD_COLOR: Color32 = Color32::from_rgb(0x26, 0x70, 0x39);
 static BUTTON_COLOR: Color32 = Color32::from_rgb(0xFF, 0x5A, 0x36);
+static BLACK_PIECE: egui::ImageSource = egui::include_image!("../../assets/black_piece.png");
+static WHITE_PIECE: egui::ImageSource = egui::include_image!("../../assets/white_piece.png");
 
 pub struct BoardView {
     chatbox_text: String,
     text_font: egui::FontId,
     rank_font: egui::FontId,
-    error: Option<&'static str>,
 }
 
 impl BoardView {
@@ -21,7 +22,6 @@ impl BoardView {
             chatbox_text: String::new(),
             text_font: egui::FontId::proportional(16.0),
             rank_font: egui::FontId::monospace(18.0),
-            error: None
          }
     }
 
@@ -36,12 +36,25 @@ impl BoardView {
                 ui.heading(turn_text);
                 ui.add_space(50.0);
 
-                self.board_widget(ui, controller);
-                
-                ui.add_space(20.0);
-                self.error_widget(ui);
-                ui.add_space(60.0);
+                ui.horizontal_top(|ui| {
+                    ui.set_min_width(ui.available_width());
+                    ui.add_space((ui.available_width() / 2.0) - ((8.0*48.0)/2.0) - 45.0);
+                    self.board_widget(ui, controller);
 
+                    ui.vertical_centered(|ui| {
+                        let (yours, opponents) = match controller.get_is_host() {
+                            true => (BLACK_PIECE.clone(), WHITE_PIECE.clone()),
+                            false => (WHITE_PIECE.clone(), BLACK_PIECE.clone()),
+                        };
+
+                        ui.heading("yours");
+                        ui.add_sized([80.0, 80.0], egui::Image::new(yours));
+                        ui.heading("opponent");
+                        ui.add_sized([80.0, 80.0], egui::Image::new(opponents));
+                    });
+                });
+
+                ui.add_space(50.0);
                 ui.with_layout(Layout::right_to_left(egui::Align::BOTTOM), |ui| {
                     self.menu_widget(ui, controller);
                     self.chat_widget(ui, controller);
@@ -51,11 +64,7 @@ impl BoardView {
     }
 
     fn board_widget(&mut self, ui: &mut Ui, controller: &mut GameController) {
-        ui.horizontal_top(|ui| {
-            ui.set_min_width(ui.available_width());
-            ui.add_space((ui.available_width() / 2.0) - ((8.0*48.0)/2.0) - 45.0);
-
-            egui::Frame::none()
+        egui::Frame::none()
             .fill(BOARD_COLOR)
             .rounding(5.0)
             .inner_margin(10.0)
@@ -110,7 +119,6 @@ impl BoardView {
                     });
                 });
             });
-        });
     }
 
     fn cell_widget(&mut self, ui: &mut Ui, i: usize, j: usize, controller: &mut GameController) {
@@ -125,8 +133,8 @@ impl BoardView {
                     ui.vertical_centered_justified(|ui| {
                         if let Some(piece) = controller.get_piece_at(i, j) {
                             let image = match piece {
-                                0 => egui::include_image!("../../assets/black_piece.png"),
-                                1 => egui::include_image!("../../assets/white_piece.png"),
+                                0 => BLACK_PIECE.clone(),
+                                1 => WHITE_PIECE.clone(),
                                 _ => panic!("Invalid piece type at position {i}:{j}")
                             };
                             ui.add(egui::Image::new(image).sense(egui::Sense::click()));
@@ -136,10 +144,7 @@ impl BoardView {
                                 .min_size(ui.available_size()));
 
                             if button.clicked() {
-                                if let Err(e) = controller.set_piece_on_board(i, j, false) {
-                                    println!("error: {e}");
-                                    self.error = Some(e);
-                                }
+                                controller.try_set_piece_on_board(i, j, false);
                             }
                         }
                     })
@@ -177,8 +182,16 @@ impl BoardView {
                         .show(ui, |ui| {
                             ui.with_layout(Layout::top_down_justified(egui::Align::LEFT), |ui| {
                                 for text in controller.get_chat_messages() {
+                                    let color = if text.contains("WARNING:") {
+                                        Color32::YELLOW
+                                    } else if text.contains("ERROR:") {
+                                        Color32::LIGHT_RED
+                                    } else {
+                                        Color32::WHITE
+                                    };
+
                                     ui.label(egui::RichText::new(text)
-                                        .color(Color32::WHITE)
+                                        .color(color)
                                         .font(self.text_font.clone()));
 
                                     ui.add_space(1.0);
@@ -199,8 +212,8 @@ impl BoardView {
             .show(ui, |ui| {
                 ui.set_max_width(300.0);
                 ui.vertical_centered_justified(|ui| {
-                    if self.button_widget(ui, "Undo Move").clicked() {
-                        println!("Undo");
+                    if self.button_widget(ui, "Undo Last Move").clicked() {
+                        controller.undo_last_move();
                     }
 
                     if self.button_widget(ui, "Surrender").clicked() {
@@ -208,9 +221,7 @@ impl BoardView {
                     }
 
                     if self.button_widget(ui, "Pass Turn").clicked() {
-                        if let Err(error) = controller.pass_turn() {
-                            self.error = Some(error);
-                        }
+                        controller.try_pass_turn()
                     }
                 });
             });
@@ -225,19 +236,5 @@ impl BoardView {
             .fill(BUTTON_COLOR.clone())
             .rounding(5.0)
             .min_size(Vec2::new(0.0, 50.0)))
-    }
-
-    fn error_widget(&mut self, ui: &mut Ui) {
-        egui::Frame::none()
-            .show(ui, |ui| {
-                ui.set_min_height(20.0);
-                ui.set_max_height(20.0);
-
-                if let Some(error) = self.error {
-                    ui.label(egui::RichText::new(error)
-                        .color(Color32::LIGHT_RED)
-                        .size(14.0));
-                }
-            });
     }
 }

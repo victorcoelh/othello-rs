@@ -1,3 +1,4 @@
+use std::cmp;
 use crate::Position;
 
 #[derive(Copy, Clone, Debug)]
@@ -22,7 +23,8 @@ impl PartialEq for OthelloPiece {
 }
 
 pub struct OthelloBoard{
-    board_state: [[Option<OthelloPiece>; 8]; 8]
+    board_state: [[Option<OthelloPiece>; 8]; 8],
+    last_board_state: [[Option<OthelloPiece>; 8]; 8]
 }
 
 impl OthelloBoard{
@@ -33,7 +35,7 @@ impl OthelloBoard{
         board[4][3] = Some(OthelloPiece::new(0));
         board[4][4] = Some(OthelloPiece::new(1));
 
-        OthelloBoard { board_state: board }
+        OthelloBoard { board_state: board, last_board_state: board.clone() }
     }
 
     pub fn get_piece_at(&self, rank: usize, file: usize) -> Option<u8>{
@@ -51,6 +53,7 @@ impl OthelloBoard{
             empty squares.")
         }
         
+        self.last_board_state = self.board_state.clone();
         let new_piece = OthelloPiece::new(which_player);
         self.board_state[file][rank] = Some(new_piece);
         self.flip_pieces_if_needed(rank, file);
@@ -81,6 +84,10 @@ impl OthelloBoard{
         } 
     }
 
+    pub fn revert_to_last_state(&mut self) {
+        self.board_state = self.last_board_state;
+    }
+
     fn flip_pieces_if_needed(&mut self, rank: usize, file: usize) {
         let should_flip = self.check_for_flanks(rank, file);
         let current_state = self.board_state[file][rank].unwrap().state;
@@ -96,9 +103,13 @@ impl OthelloBoard{
 
         for direction in self.cast_rays(rank, file) {
             for (i, (rank, file)) in direction.iter().enumerate() {
+                if let None = self.board_state[*file][*rank] {
+                    break;
+                }
+
                 if current_piece == self.board_state[*file][*rank] {
-                    println!("{:?}", &direction[..i]);
                     should_flip.extend_from_slice(&direction[..i]);
+                    break;
                 }
             }
         }
@@ -108,12 +119,25 @@ impl OthelloBoard{
     fn cast_rays(&self, rank: usize, file: usize) -> Vec<Vec<Position>> {
         let mut hit_rays: Vec<Vec<Position>> = Vec::new();
 
+        // up, down, right, left
         hit_rays.push((rank+1..8).map(|x| (x, file)).collect());
         hit_rays.push((0..rank).rev().map(|x| (x, file)).collect());
         hit_rays.push((file+1..8).map(|y| (rank, y)).collect());
         hit_rays.push((0..file).rev().map(|y| (rank, y)).collect());
 
-        println!("{:?}", hit_rays);
+        // diagonals
+        let limit = cmp::min(7-rank, 7-file);
+        hit_rays.push((1..limit).map(|x| (rank+x, file+x)).collect());
+
+        let limit = cmp::min(7-rank, file);
+        hit_rays.push((1..limit).map(|x| (rank+x, file-x)).collect());
+
+        let limit = cmp::min(rank, 7-file);
+        hit_rays.push((1..limit).map(|x| (rank-x, file+x)).collect());
+
+        let limit = cmp::min(rank, file);
+        hit_rays.push((1..limit).map(|x| (rank-x, file-x)).collect());
+
         hit_rays
     }
 }

@@ -7,7 +7,9 @@ pub enum Message {
     TextMessage(String),
     PassTurn(),
     Surrender(),
-    GameEnded()
+    GameEnded(),
+    UndoMove(),
+    TestConnection()
 }
 
 impl Message {
@@ -18,6 +20,8 @@ impl Message {
             Self::PassTurn() => "2".to_string(),
             Self::Surrender() => "3".to_string(),
             Self::GameEnded() => "4".to_string(),
+            Self::UndoMove() => "5".to_string(),
+            Self::TestConnection() => "6".to_string(),
         }.into_bytes();
 
         bytes.resize(BUFFER_SIZE, 0); // pads the buffer with NULL characters
@@ -38,6 +42,8 @@ impl Message {
             b'2' => Ok(Message::PassTurn()),
             b'3' => Ok(Message::Surrender()),
             b'4' => Ok(Message::GameEnded()),
+            b'5' => Ok(Message::UndoMove()),
+            b'6' => Ok(Message::TestConnection()),
             _ => Err("Non-existant message type received")
         }
     }
