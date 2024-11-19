@@ -26,7 +26,6 @@ impl BoardView {
             text_font: egui::FontId::proportional(16.0),
             rank_font: egui::FontId::monospace(18.0),
             error: None,
-            warning: None,
             timer_start: SystemTime::now(),
          }
     }
