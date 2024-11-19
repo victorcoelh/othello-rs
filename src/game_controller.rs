@@ -27,6 +27,7 @@ pub struct GameController {
     chat_messages: Vec<String>,
     controller_tx: Option<mpsc::Sender<Message>>,
     controller_rx: Option<mpsc::Receiver<Message>>,
+    pub warning: Option<String>,
 }
 
 impl GameController {
@@ -39,7 +40,8 @@ impl GameController {
             opponent_passed: false,
             chat_messages: Vec::new(),
             controller_tx: None,
-            controller_rx: None
+            controller_rx: None,
+            warning: None,
         }
     }
 
@@ -63,26 +65,35 @@ impl GameController {
         self.is_host
     }
 
-    pub fn pass_turn(&mut self) -> Result<(), &'static str> {
+    pub fn try_set_piece_on_board(&mut self, rank: usize, file: usize, which_player: bool) {
+        if !which_player {
+            if !self.player_turn {
+                self.chat_messages.push("ERROR: Wait for your opponent's turn!".to_string());
+            }
+            self.send_message_to_connection(Message::SetPiece((rank, file)));
+        }
+
+        let which_player = self.swap_player_if_not_host(which_player);
+        if let Err(error) = self.board.set_piece(rank, file, which_player as u8) {
+            self.chat_messages.push(format!("ERROR: {}", error));
+        }
+
+        self.player_turn = !self.player_turn;
+    }
+
+    pub fn try_pass_turn(&mut self) {
         if !self.player_turn {
-            return Err("Not your turn!");
+            self.chat_messages.push("ERROR: Can't pass if it is not your turn!".to_string());
         }
 
         if self.opponent_passed {
             let player_won = self.check_if_player_won();
             self.state = GameState::GameEnded(player_won);
             self.send_message_to_connection(Message::GameEnded());
-            return Ok(())
         }
 
         self.player_turn = false;
         self.send_message_to_connection(Message::PassTurn());
-        Ok(())
-    }
-
-    pub fn surrender(&mut self) {
-        self.send_message_to_connection(Message::Surrender());
-        self.state = GameState::GameEnded(GameResult::PlayerLost);
     }
 
     pub fn push_chat_message(&mut self, msg: String, which_player: bool) {
@@ -96,19 +107,9 @@ impl GameController {
         self.chat_messages.push(msg_with_prefix);
     }
 
-    pub fn set_piece_on_board(&mut self, rank: usize, file: usize, which_player: bool)
-        -> Result<(), &'static str> {
-        if !which_player {
-            if !self.player_turn {
-                return Err("Wait for your opponent's turn!");
-            }
-            self.send_message_to_connection(Message::SetPiece((rank, file)));
-        }
-
-        let which_player = self.swap_player_if_not_host(which_player);
-        self.board.set_piece(rank, file, which_player as u8)?;
-        self.player_turn = !self.player_turn;
-        Ok(())
+    pub fn surrender(&mut self) {
+        self.send_message_to_connection(Message::Surrender());
+        self.state = GameState::GameEnded(GameResult::PlayerLost);
     }
 
     pub fn undo_last_move(&mut self) {
@@ -132,7 +133,7 @@ impl GameController {
                 Message::Surrender() => self.state = GameState::GameEnded(GameResult::PlayerWon),
                 Message::TestConnection() => (),
                 Message::SetPiece((x, y)) => {
-                    self.set_piece_on_board(x, y, true).unwrap();
+                    self.try_set_piece_on_board(x, y, true);
                 },
                 Message::UndoMove() => {
                     self.board.revert_to_last_state();
@@ -148,24 +149,6 @@ impl GameController {
                 },
             }
         }
-    }
-
-    pub fn check_if_player_won(&self) -> GameResult {
-        let (p1_pieces, p2_pieces) = self.board.count_pieces();
-
-        if p1_pieces == p2_pieces {
-            return GameResult::Tie
-        }
-
-        if self.is_host && p1_pieces > p2_pieces {
-            return GameResult::PlayerWon
-        }
-
-        if !self.is_host && p2_pieces > p1_pieces {
-            return GameResult::PlayerWon
-        }
-
-        GameResult::PlayerLost
     }
 
     pub fn restart_game(&mut self) {
@@ -255,5 +238,23 @@ impl GameController {
         } else {
             which_player
         }
+    }
+
+    fn check_if_player_won(&self) -> GameResult {
+        let (p1_pieces, p2_pieces) = self.board.count_pieces();
+
+        if p1_pieces == p2_pieces {
+            return GameResult::Tie
+        }
+
+        if self.is_host && p1_pieces > p2_pieces {
+            return GameResult::PlayerWon
+        }
+
+        if !self.is_host && p2_pieces > p1_pieces {
+            return GameResult::PlayerWon
+        }
+
+        GameResult::PlayerLost
     }
 }

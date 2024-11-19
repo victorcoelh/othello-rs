@@ -1,9 +1,8 @@
 use core::f32;
 
 use eframe::egui::{self, Color32, Layout, Ui, Vec2};
-use std::time::{Duration, SystemTime};
 
-use crate::game_controller::GameController;
+use crate::{game_controller::GameController, Color};
 
 static BORDER_COLOR: Color32 = Color32::from_rgb(0x54, 0x77, 0x35);
 static BOARD_COLOR: Color32 = Color32::from_rgb(0x26, 0x70, 0x39);
@@ -15,8 +14,6 @@ pub struct BoardView {
     chatbox_text: String,
     text_font: egui::FontId,
     rank_font: egui::FontId,
-    error: Option<&'static str>,
-    timer_start: SystemTime
 }
 
 impl BoardView {
@@ -25,8 +22,6 @@ impl BoardView {
             chatbox_text: String::new(),
             text_font: egui::FontId::proportional(16.0),
             rank_font: egui::FontId::monospace(18.0),
-            error: None,
-            timer_start: SystemTime::now(),
          }
     }
 
@@ -58,10 +53,6 @@ impl BoardView {
                         ui.add_sized([80.0, 80.0], egui::Image::new(opponents));
                     });
                 });
-                
-                ui.add_space(20.0);
-                self.error_widget(ui);
-                ui.add_space(60.0);
 
                 ui.with_layout(Layout::right_to_left(egui::Align::BOTTOM), |ui| {
                     self.menu_widget(ui, controller);
@@ -152,11 +143,7 @@ impl BoardView {
                                 .min_size(ui.available_size()));
 
                             if button.clicked() {
-                                if let Err(e) = controller.set_piece_on_board(i, j, false) {
-                                    println!("error: {e}");
-                                    self.error = Some(e);
-                                    self.timer_start = SystemTime::now();
-                                }
+                                controller.try_set_piece_on_board(i, j, false);
                             }
                         }
                     })
@@ -194,8 +181,16 @@ impl BoardView {
                         .show(ui, |ui| {
                             ui.with_layout(Layout::top_down_justified(egui::Align::LEFT), |ui| {
                                 for text in controller.get_chat_messages() {
+                                    let color = if text.contains("WARNING:") {
+                                        Color32::LIGHT_YELLOW
+                                    } else if text.contains("ERROR:") {
+                                        Color32::LIGHT_RED
+                                    } else {
+                                        Color32::WHITE
+                                    };
+
                                     ui.label(egui::RichText::new(text)
-                                        .color(Color32::WHITE)
+                                        .color(color)
                                         .font(self.text_font.clone()));
 
                                     ui.add_space(1.0);
@@ -225,10 +220,7 @@ impl BoardView {
                     }
 
                     if self.button_widget(ui, "Pass Turn").clicked() {
-                        if let Err(error) = controller.pass_turn() {
-                            self.error = Some(error);
-                            self.timer_start = SystemTime::now();
-                        }
+                        controller.try_pass_turn()
                     }
                 });
             });
@@ -243,23 +235,5 @@ impl BoardView {
             .fill(BUTTON_COLOR.clone())
             .rounding(5.0)
             .min_size(Vec2::new(0.0, 50.0)))
-    }
-
-    fn error_widget(&mut self, ui: &mut Ui) {
-        if self.timer_start.elapsed().unwrap_or(Duration::ZERO) > Duration::from_secs(6) {
-            return ()
-        }
-
-        egui::Frame::none()
-            .show(ui, |ui| {
-                ui.set_min_height(20.0);
-                ui.set_max_height(20.0);
-
-                if let Some(error) = self.error {
-                    ui.label(egui::RichText::new(error)
-                        .color(Color32::LIGHT_RED)
-                        .size(18.0));
-                }
-            });
     }
 }
