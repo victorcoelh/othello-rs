@@ -127,16 +127,16 @@ impl OthelloBoard{
 
         // diagonals
         let limit = cmp::min(7-rank, 7-file);
-        hit_rays.push((1..limit).map(|x| (rank+x, file+x)).collect());
+        hit_rays.push((1..=limit).map(|x| (rank+x, file+x)).collect());
 
         let limit = cmp::min(7-rank, file);
-        hit_rays.push((1..limit).map(|x| (rank+x, file-x)).collect());
+        hit_rays.push((1..=limit).map(|x| (rank+x, file-x)).collect());
 
         let limit = cmp::min(rank, 7-file);
-        hit_rays.push((1..limit).map(|x| (rank-x, file+x)).collect());
+        hit_rays.push((1..=limit).map(|x| (rank-x, file+x)).collect());
 
         let limit = cmp::min(rank, file);
-        hit_rays.push((1..limit).map(|x| (rank-x, file-x)).collect());
+        hit_rays.push((1..=limit).map(|x| (rank-x, file-x)).collect());
 
         hit_rays
     }

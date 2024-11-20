@@ -75,6 +75,13 @@ impl GameController {
         let which_player = self.swap_player_if_not_host(which_player);
         if let Err(error) = self.board.set_piece(rank, file, which_player as u8) {
             self.chat_messages.push(format!("ERROR: {}", error));
+            return ()
+        }
+
+        let (p1_pieces, p2_pieces) = self.board.count_pieces();
+        if p1_pieces == 0 || p2_pieces == 0 {
+            self.opponent_passed = true;
+            self.try_pass_turn();
         }
 
         self.player_turn = !self.player_turn;

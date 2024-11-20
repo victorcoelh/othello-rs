@@ -47,7 +47,6 @@ impl eframe::App for GuiRunner {
         };
 
         if let Some(error) = self.error_rx.try_recv().ok() {
-            println!("has error");
             self.error = Some(error);
         }
 
