@@ -21,6 +21,8 @@ impl RpcClient {
         let board_url = format!("http://{}:11069", ip_addr);
         let game_url = format!("http://{}:11069", ip_addr);
 
+        println!("{}", chat_url);
+
         let initializer = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -28,9 +30,9 @@ impl RpcClient {
 
         initializer.block_on(async move {
             Ok(RpcClient {
-                chat_client: ChatClient::connect(chat_url).await?,
-                board_client: BoardClient::connect(board_url).await?,
-                game_flow_client: GameFlowClient::connect(game_url).await?,
+                chat_client: ChatClient::connect(chat_url).await.expect("chat"),
+                board_client: BoardClient::connect(board_url).await.expect("board"),
+                game_flow_client: GameFlowClient::connect(game_url).await.expect("game"),
                 error_queue: error_queue,
             })
         })
