@@ -31,7 +31,7 @@ impl MainMenuView {
                 );
         
                 if connect_button.clicked() {
-                    controller.connect_to(&self.socket_addr);
+                    controller.connect_to(&self.socket_addr, true);
                 }
             })
         });

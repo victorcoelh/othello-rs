@@ -99,6 +99,17 @@ impl RpcClient {
             handle_error(result, error_queue);
         });
     }
+    
+    pub fn connect_to(&mut self) {
+        let request = Empty { };
+        let mut client = self.game_flow_client.clone();
+        let error_queue = self.error_queue.clone();
+
+        self.runtime.spawn(async move {
+            let result = client.connect_to(request).await;
+            handle_error(result, error_queue);
+        });
+    }
 }
 
 fn handle_error(result: RpcResult, error_queue: Arc<Mutex<Vec<String>>>) {

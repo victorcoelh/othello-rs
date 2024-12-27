@@ -87,6 +87,18 @@ impl GameFlow for RpcServer {
     async fn test_connection(&self, _request: Request<Empty>) -> RpcResult {
         Ok(self.build_response())
     }
+
+    async fn connect_to(&self, request: Request<Empty>) -> RpcResult {
+        let mut controller = self.lock_controller()?;
+        let ip_addr = request.remote_addr().unwrap();
+        let metadata = request.metadata().keys();
+        println!("{}", ip_addr);
+        println!("{:?}", metadata);
+
+        controller.connect_to(&ip_addr.to_string(), false);
+
+        Ok(self.build_response())
+    }
 }
 
 pub async fn start_rpc_server(game_controller: Arc<Mutex<GameController>>)

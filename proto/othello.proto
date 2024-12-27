@@ -14,6 +14,7 @@ service GameFlow {
     rpc ChangeTurn (Empty) returns (Empty);
     rpc UndoMove (Empty) returns (Empty);
     rpc TestConnection (Empty) returns (Empty);
+    rpc ConnectTo (Empty) returns (Empty);
 }
 
 message ChatRequest {
