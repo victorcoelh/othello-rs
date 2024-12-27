@@ -60,7 +60,7 @@ impl GameController {
                 self.chat_messages.push("ERROR: Wait for your opponent's turn!".to_string());
                 return ()
             }
-            //self.send_message_to_connection(Message::SetPiece((rank, file)));
+            self.rpc_client.as_mut().unwrap().set_piece(rank, file);
         }
 
         let from_opponent = self.swap_player_if_not_host(from_opponent);
@@ -88,12 +88,12 @@ impl GameController {
         if self.opponent_passed {
             let player_won = self.check_if_player_won();
             self.state = GameState::GameEnded(player_won);
-            //self.send_message_to_connection(Message::GameEnded());
+            self.rpc_client.as_mut().unwrap().end_game(false); //ajeitar dps
         }
 
         self.player_turn = false;
         self.opponent_passed = false;
-        //self.send_message_to_connection(Message::PassTurn());
+        self.rpc_client.as_mut().unwrap().change_turn();
     }
 
     pub fn push_chat_message(&mut self, msg: String, from_opponent: bool) {
@@ -112,7 +112,7 @@ impl GameController {
     }
 
     pub fn surrender(&mut self) {
-        //self.send_message_to_connection(Message::Surrender());
+        self.rpc_client.as_mut().unwrap().end_game(true);
         self.state = GameState::GameEnded(GameResult::PlayerLost);
     }
 
@@ -121,7 +121,7 @@ impl GameController {
         self.player_turn = !self.player_turn;
         self.opponent_passed = false;
 
-        //self.send_message_to_connection(Message::UndoMove());
+        self.rpc_client.as_mut().unwrap().undo_move();
     }
 
     pub fn restart_game(&mut self) {
