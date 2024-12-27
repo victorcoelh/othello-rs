@@ -91,7 +91,7 @@ impl GameFlow for RpcServer {
 
 pub async fn start_rpc_server(game_controller: Arc<Mutex<GameController>>)
     -> Result<(), Box<dyn std::error::Error>> {
-    let addr = format!("http://127.0.0.1:11069").parse()?;
+    let addr = format!("127.0.0.1:11069").parse()?;
     let server = RpcServer::new(game_controller);
 
     Server::builder()

@@ -4,8 +4,7 @@ use othello_rs::game_controller::GameController;
 use othello_rs::gui::gui_runner::build_game_window;
 use othello_rs::networking::start_rpc_server;
 
-#[tokio::main]
-async fn main() -> eframe::Result<()> {
+fn main() -> eframe::Result<()> {
     let controller = Arc::new(Mutex::new(GameController::new()));
 
     let runtime = tokio::runtime::Builder::new_multi_thread()
