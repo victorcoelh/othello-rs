@@ -99,7 +99,7 @@ impl GameController {
     pub fn push_chat_message(&mut self, msg: String, from_opponent: bool) {
         let msg_with_prefix = match from_opponent {
             false => {
-                //self.send_message_to_connection(Message::TextMessage(msg.clone()));
+                self.rpc_client.as_mut().unwrap().send_chat_message(msg.clone());
                 format!("player: {}", msg)
             },
             true => format!("opponent: {}", msg)
