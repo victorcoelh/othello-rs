@@ -1,9 +1,6 @@
 use crate::game_logic::OthelloBoard;
-use crate::networking::{Message, PeerToPeerConnection};
-use std::io::Error;
-use std::sync::mpsc;
-use std::time::{Duration, SystemTime};
-use std::thread;
+use crate::networking::RpcClient;
+use std::sync::{Arc, Mutex};
 
 #[derive(Copy, Clone)]
 pub enum GameResult {
@@ -19,14 +16,14 @@ pub enum GameState {
 }
 
 pub struct GameController {
-    state: GameState,
-    board: OthelloBoard,
-    is_host: bool,
-    player_turn: bool,
-    opponent_passed: bool,
+    pub state: GameState,
+    pub board: OthelloBoard,
+    pub is_host: bool,
+    pub player_turn: bool,
+    pub opponent_passed: bool,
+    pub error_queue: Arc<Mutex<Vec<String>>>,
     chat_messages: Vec<String>,
-    controller_tx: Option<mpsc::Sender<Message>>,
-    controller_rx: Option<mpsc::Receiver<Message>>,
+    rpc_client: Option<RpcClient>,
 }
 
 impl GameController {
@@ -38,13 +35,9 @@ impl GameController {
             player_turn: true,
             opponent_passed: false,
             chat_messages: Vec::new(),
-            controller_tx: None,
-            controller_rx: None,
+            rpc_client: None,
+            error_queue: Arc::new(Mutex::new(Vec::new()))
         }
-    }
-
-    pub fn get_state(&self) -> &GameState {
-        &self.state
     }
 
     pub fn get_piece_at(&self, rank: usize, file: usize) -> Option<u8>{
@@ -54,26 +47,23 @@ impl GameController {
     pub fn get_chat_messages(&self) -> &Vec<String> {
         &self.chat_messages
     }
-    
-    pub fn get_player_turn(&self) -> bool {
-        self.player_turn
+
+    pub fn connect_to(&mut self, ip_addr: &str) {
+        let client = RpcClient::new(ip_addr, self.error_queue.clone());
+        self.rpc_client = Some(client.unwrap())
     }
 
-    pub fn get_is_host(&self) -> bool {
-        self.is_host
-    }
-
-    pub fn try_set_piece_on_board(&mut self, rank: usize, file: usize, which_player: bool) {
-        if !which_player {
+    pub fn try_set_piece_on_board(&mut self, rank: usize, file: usize, from_opponent: bool) {
+        if !from_opponent {
             if !self.player_turn {
                 self.chat_messages.push("ERROR: Wait for your opponent's turn!".to_string());
                 return ()
             }
-            self.send_message_to_connection(Message::SetPiece((rank, file)));
+            //self.send_message_to_connection(Message::SetPiece((rank, file)));
         }
 
-        let which_player = self.swap_player_if_not_host(which_player);
-        if let Err(error) = self.board.set_piece(rank, file, which_player as u8) {
+        let from_opponent = self.swap_player_if_not_host(from_opponent);
+        if let Err(error) = self.board.set_piece(rank, file, from_opponent as u8) {
             self.chat_messages.push(format!("ERROR: {}", error));
             return ()
         }
@@ -97,18 +87,18 @@ impl GameController {
         if self.opponent_passed {
             let player_won = self.check_if_player_won();
             self.state = GameState::GameEnded(player_won);
-            self.send_message_to_connection(Message::GameEnded());
+            //self.send_message_to_connection(Message::GameEnded());
         }
 
         self.player_turn = false;
         self.opponent_passed = false;
-        self.send_message_to_connection(Message::PassTurn());
+        //self.send_message_to_connection(Message::PassTurn());
     }
 
-    pub fn push_chat_message(&mut self, msg: String, which_player: bool) {
-        let msg_with_prefix = match which_player {
+    pub fn push_chat_message(&mut self, msg: String, from_opponent: bool) {
+        let msg_with_prefix = match from_opponent {
             false => {
-                self.send_message_to_connection(Message::TextMessage(msg.clone()));
+                //self.send_message_to_connection(Message::TextMessage(msg.clone()));
                 format!("player: {}", msg)
             },
             true => format!("opponent: {}", msg)
@@ -116,8 +106,12 @@ impl GameController {
         self.chat_messages.push(msg_with_prefix);
     }
 
+    pub fn push_warning_to_chat(&mut self, msg: &str) {
+        self.chat_messages.push(format!("WARNING: {}", msg))
+    }
+
     pub fn surrender(&mut self) {
-        self.send_message_to_connection(Message::Surrender());
+        //self.send_message_to_connection(Message::Surrender());
         self.state = GameState::GameEnded(GameResult::PlayerLost);
     }
 
@@ -126,131 +120,24 @@ impl GameController {
         self.player_turn = !self.player_turn;
         self.opponent_passed = false;
 
-        self.send_message_to_connection(Message::UndoMove());
-    }
-
-    pub fn check_for_new_message(&mut self) {
-        let rx = match self.controller_rx.as_mut() {
-            Some(rx) => rx,
-            None => return
-        };
-
-        if let Some(msg) = rx.try_recv().ok() {
-            match msg {
-                Message::TextMessage(text) => self.push_chat_message(text, true),
-                Message::Surrender() => self.state = GameState::GameEnded(GameResult::PlayerWon),
-                Message::TestConnection() => (),
-                Message::SetPiece((x, y)) => {
-                    self.try_set_piece_on_board(x, y, true);
-                },
-                Message::UndoMove() => {
-                    self.board.revert_to_last_state();
-                    self.player_turn = !self.player_turn;
-                    self.chat_messages.push("WARNING: The last move was undone by the opponent.".to_string());
-                },
-                Message::GameEnded() => {
-                    let player_won = self.check_if_player_won();
-                    self.state = GameState::GameEnded(player_won);
-                },
-                Message::PassTurn() => {
-                    self.player_turn = !self.player_turn;
-                    self.opponent_passed = true;
-                    self.chat_messages.push("WARNING: Opponent forfeited their turn.".to_string());
-                },
-            }
-        }
+        //self.send_message_to_connection(Message::UndoMove());
     }
 
     pub fn restart_game(&mut self) {
         self.state = GameState::NoConnection;
         self.board = OthelloBoard::new();
         self.chat_messages = Vec::new();
-        self.controller_rx = None;
-        self.controller_tx = None;
     }
 
-    pub fn listen_and_connect(&mut self, addr: &str, error_tx: mpsc::Sender<String>) -> Result<(), Error> {
-        let (connection_tx, controller_rx) = mpsc::channel();
-        let (controller_tx, connection_rx) = mpsc::channel();
-        let mut connection =
-            PeerToPeerConnection::listen_to(addr, 0.5, error_tx)?;
-
-        self.controller_rx = Some(controller_rx);
-        self.controller_tx = Some(controller_tx);
-
-        thread::spawn(move || {
-            let mut start = SystemTime::now();
-            let time_limit = Duration::from_secs(5);
-
-            loop {
-                if start.elapsed().unwrap_or(Duration::ZERO) > time_limit {
-                    connection.test_connection().unwrap();
-                    start = SystemTime::now();
-                }
-
-                if let Some(rcv_msg) = connection.wait_for_message() {
-                    connection_tx.send(rcv_msg).unwrap(); // can safely unwrap
-                }
-    
-                if let Some(send_msg) = connection_rx.try_recv().ok() {
-                    connection.send_message(send_msg).unwrap();
-                }
-            }
-        });
-
-        self.state = GameState::Playing;
-        self.player_turn = true;
-        self.is_host = true;
-        Ok(())
-    }
-
-    pub fn connect(&mut self, addr: &str, error_tx: mpsc::Sender<String>) -> Result<(), Error> {
-        let (connection_tx, controller_rx) = mpsc::channel();
-        let (controller_tx, connection_rx) = mpsc::channel();
-        let mut connection =
-            PeerToPeerConnection::connect_to(addr, 1.0, error_tx)?;
-
-        self.controller_rx = Some(controller_rx);
-        self.controller_tx = Some(controller_tx);
-
-        thread::spawn(move || {
-            let mut start = SystemTime::now();
-            let time_limit = Duration::from_secs_f32(2.5);
-
-            loop {
-                if start.elapsed().unwrap_or(Duration::ZERO) > time_limit {
-                    connection.test_connection().unwrap();
-                    start = SystemTime::now();
-                }
-
-                if let Some(rcv_msg) = connection.wait_for_message() {
-                    connection_tx.send(rcv_msg).unwrap(); // can safely unwrap
-                }
-    
-                if let Some(send_msg) = connection_rx.try_recv().ok() {
-                    connection.send_message(send_msg).unwrap();
-                }
-            }
-        });
-
-        self.state = GameState::Playing;
-        self.player_turn = false;
-        Ok(())
-    }
-
-    fn send_message_to_connection(&mut self, message: Message) {
-        self.controller_tx.as_mut().unwrap().send(message).unwrap();
-    }
-
-    fn swap_player_if_not_host(&self, which_player: bool) -> bool {
+    fn swap_player_if_not_host(&self, from_opponent: bool) -> bool {
         if !self.is_host {
-            !which_player
+            !from_opponent
         } else {
-            which_player
+            from_opponent
         }
     }
 
-    fn check_if_player_won(&self) -> GameResult {
+    pub fn check_if_player_won(&self) -> GameResult {
         let (p1_pieces, p2_pieces) = self.board.count_pieces();
 
         if p1_pieces == p2_pieces {

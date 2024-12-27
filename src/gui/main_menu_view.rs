@@ -1,5 +1,3 @@
-use std::sync::mpsc::Sender;
-
 use eframe::egui;
 
 use crate::game_controller::GameController;
@@ -16,11 +14,11 @@ impl MainMenuView {
         }
     }
 
-    pub fn draw(&mut self, ctx: &egui::Context, controller: &mut GameController, error_tx: Sender<String>){
-        self.main_window(ctx, controller, error_tx);
+    pub fn draw(&mut self, ctx: &egui::Context, controller: &mut GameController){
+        self.main_window(ctx, controller);
     }
 
-    fn main_window(&mut self, ctx: &egui::Context, controller: &mut GameController, error_tx: Sender<String>) {
+    fn main_window(&mut self, ctx: &egui::Context, controller: &mut GameController) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.add_space(300.0);
@@ -31,23 +29,9 @@ impl MainMenuView {
                 let connect_button = ui.add(
                     egui::Button::new("Connect to Address")
                 );
-
-                let wait_button = ui.add(
-                    egui::Button::new("Wait for Connection")
-                );
         
                 if connect_button.clicked() {
-                    if let Err(error) = controller.connect(&self.socket_addr, error_tx.clone()) {
-                        error_tx.send(format!("Error while trying to connect to socket {}:\n\n{}",
-                            &self.socket_addr, error)).unwrap();
-                    };
-                } else {
-                    if wait_button.clicked() {
-                        if let Err(error) = controller.listen_and_connect(&self.socket_addr, error_tx.clone()) {
-                            error_tx.send(format!("Error while trying to bind to socket {}:\n\n{}",
-                                &self.socket_addr, error)).unwrap();
-                        }
-                    }
+                    controller.connect_to(&self.socket_addr);
                 }
             })
         });
