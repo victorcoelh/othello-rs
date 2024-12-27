@@ -13,6 +13,7 @@ pub struct RpcClient{
     board_client: BoardClient<Channel>,
     game_flow_client: GameFlowClient<Channel>,
     error_queue: Arc<Mutex<Vec<String>>>,
+    runtime: tokio::runtime::Runtime
 }
 
 impl RpcClient {
@@ -21,20 +22,26 @@ impl RpcClient {
         let board_url = format!("http://{}:11069", ip_addr);
         let game_url = format!("http://{}:11069", ip_addr);
 
-        println!("{}", chat_url);
-
-        let initializer = tokio::runtime::Builder::new_current_thread()
+        let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap();
 
-        initializer.block_on(async move {
-            Ok(RpcClient {
-                chat_client: ChatClient::connect(chat_url).await.expect("chat"),
-                board_client: BoardClient::connect(board_url).await.expect("board"),
-                game_flow_client: GameFlowClient::connect(game_url).await.expect("game"),
-                error_queue: error_queue,
-            })
+        let (chat_client, board_client, game_flow_client) =
+            runtime.block_on(async move {
+                let chat_client = ChatClient::connect(chat_url).await?;
+                let board_client = BoardClient::connect(board_url).await?;
+                let game_flow_client = GameFlowClient::connect(game_url).await?;
+                
+                Ok((chat_client, board_client, game_flow_client))
+            })?;
+
+        Ok(RpcClient{
+            chat_client: chat_client,
+            board_client: board_client,
+            game_flow_client: game_flow_client,
+            error_queue: error_queue,
+            runtime: runtime
         })
     }
 
@@ -43,7 +50,7 @@ impl RpcClient {
         let mut client = self.chat_client.clone();
         let error_queue = self.error_queue.clone();
 
-        tokio::spawn(async move {
+        self.runtime.spawn(async move {
             let result = client.send_message(request).await;
             handle_error(result, error_queue);
         });
@@ -54,7 +61,7 @@ impl RpcClient {
         let mut client = self.board_client.clone();
         let error_queue = self.error_queue.clone();
 
-        tokio::spawn(async move {
+        self.runtime.spawn(async move {
             let result = client.set_piece(request).await;
             handle_error(result, error_queue);
         });
@@ -65,7 +72,7 @@ impl RpcClient {
         let mut client = self.game_flow_client.clone();
         let error_queue = self.error_queue.clone();
 
-        tokio::spawn(async move {
+        self.runtime.spawn(async move {
             let result = client.end_game(request).await;
             handle_error(result, error_queue);
         });
@@ -76,7 +83,7 @@ impl RpcClient {
         let mut client = self.game_flow_client.clone();
         let error_queue = self.error_queue.clone();
 
-        tokio::spawn(async move {
+        self.runtime.spawn(async move {
             let result = client.change_turn(request).await;
             handle_error(result, error_queue);
         });
@@ -87,7 +94,7 @@ impl RpcClient {
         let mut client = self.game_flow_client.clone();
         let error_queue = self.error_queue.clone();
 
-        tokio::spawn(async move {
+        self.runtime.spawn(async move {
             let result = client.undo_move(request).await;
             handle_error(result, error_queue);
         });
