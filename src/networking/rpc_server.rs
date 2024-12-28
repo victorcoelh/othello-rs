@@ -88,14 +88,11 @@ impl GameFlow for RpcServer {
         Ok(self.build_response())
     }
 
-    async fn connect_to(&self, request: Request<Empty>) -> RpcResult {
+    async fn connect_to(&self, _request: Request<Empty>) -> RpcResult {
         let mut controller = self.lock_controller()?;
-        let ip_addr = request.remote_addr().unwrap();
-        let metadata = request.metadata().keys();
-        println!("{}", ip_addr);
-        println!("{:?}", metadata);
-
-        controller.connect_to(&ip_addr.to_string(), false);
+        
+        controller.is_host = false;
+        controller.player_turn = false;
 
         Ok(self.build_response())
     }

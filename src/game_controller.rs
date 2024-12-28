@@ -31,7 +31,7 @@ impl GameController {
         GameController {
             state: GameState::NoConnection,
             board: OthelloBoard::new(),
-            is_host: false,
+            is_host: true,
             player_turn: true,
             opponent_passed: false,
             chat_messages: Vec::new(),
@@ -48,14 +48,12 @@ impl GameController {
         &self.chat_messages
     }
 
-    pub fn connect_to(&mut self, ip_addr: &str, host: bool) {
+    pub fn connect_to(&mut self, ip_addr: &str) {
         let mut client = RpcClient::new(ip_addr, self.error_queue.clone()).unwrap();
         client.connect_to();
         self.rpc_client = Some(client);
 
         self.state = GameState::Playing;
-        self.is_host = host;
-        self.player_turn = host;
     }
 
     pub fn try_set_piece_on_board(&mut self, rank: usize, file: usize, from_opponent: bool) {
