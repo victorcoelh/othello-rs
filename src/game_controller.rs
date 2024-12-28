@@ -50,9 +50,12 @@ impl GameController {
 
     pub fn connect_to(&mut self, ip_addr: &str) {
         let mut client = RpcClient::new(ip_addr, self.error_queue.clone()).unwrap();
-        client.connect_to();
-        self.rpc_client = Some(client);
 
+        if self.is_host {
+            client.connect_to();
+        }
+
+        self.rpc_client = Some(client);
         self.state = GameState::Playing;
     }
 
