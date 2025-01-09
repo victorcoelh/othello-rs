@@ -10,7 +10,7 @@ pub struct MainMenuView{
 impl MainMenuView {
     pub fn new() -> Self {
         MainMenuView {
-            socket_addr: "192.168.56.101:8069".to_string(),
+            socket_addr: "192.168.56.101".to_string(),
         }
     }
 
