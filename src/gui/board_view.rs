@@ -28,7 +28,7 @@ impl BoardView {
     pub fn draw(&mut self, ctx: &egui::Context, controller: &mut GameController) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                let turn_text = match controller.get_player_turn() {
+                let turn_text = match controller.player_turn {
                     true => "Your turn!",
                     false => "Waiting for opponent..."
                 };
@@ -42,7 +42,7 @@ impl BoardView {
                     self.board_widget(ui, controller);
 
                     ui.vertical_centered(|ui| {
-                        let (yours, opponents) = match controller.get_is_host() {
+                        let (yours, opponents) = match controller.is_host {
                             true => (BLACK_PIECE.clone(), WHITE_PIECE.clone()),
                             false => (WHITE_PIECE.clone(), BLACK_PIECE.clone()),
                         };

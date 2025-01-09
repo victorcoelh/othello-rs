@@ -1,6 +1,5 @@
-mod connection;
-mod messages;
+mod rpc_client;
+mod rpc_server;
 
-pub use connection::PeerToPeerConnection;
-pub use messages::Message;
-pub use messages::BUFFER_SIZE;
+pub use rpc_client::RpcClient;
+pub use rpc_server::start_rpc_server;

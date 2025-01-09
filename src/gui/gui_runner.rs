@@ -1,4 +1,4 @@
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::{Arc, Mutex};
 
 use eframe::egui;
 
@@ -6,7 +6,7 @@ use super::{board_view::BoardView, main_menu_view::MainMenuView, game_end_view::
 use crate::game_controller::{GameController, GameState};
 
 
-pub fn build_game_window(controller: GameController) -> eframe::Result {
+pub fn build_game_window(controller: Arc<Mutex<GameController>>) -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([850.0, 850.0]),
         ..Default::default()
@@ -24,10 +24,8 @@ pub fn build_game_window(controller: GameController) -> eframe::Result {
 }
 
 struct GuiRunner {
-    controller: GameController,
+    controller: Arc<Mutex<GameController>>,
     error: Option<String>,
-    error_tx: Sender<String>,
-    error_rx: Receiver<String>,
     board_view: BoardView,
     main_menu_view: MainMenuView,
     game_end_view: GameEndView
@@ -35,52 +33,49 @@ struct GuiRunner {
 
 impl eframe::App for GuiRunner {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
-        match self.controller.get_state() {
+        let mut controller = self.controller.lock().unwrap();
+        match controller.state {
             GameState::NoConnection => {
-                self.main_menu_view.draw(ctx, &mut self.controller, self.error_tx.clone())
+                self.main_menu_view.draw(ctx, &mut controller);
             },
-            GameState::Playing => self.board_view.draw(ctx, &mut self.controller),
+            GameState::Playing => self.board_view.draw(ctx, &mut controller),
             GameState::GameEnded(player_won) => {
                 let player_won = player_won.clone();
-                self.game_end_view.draw(ctx, &mut self.controller, player_won)
+                self.game_end_view.draw(ctx, &mut controller, player_won)
             }
         };
 
-        if let Some(error) = self.error_rx.try_recv().ok() {
+        if let Some(error) = controller.error_queue.lock().unwrap().pop() {
             self.error = Some(error);
         }
 
-        if let Some(error) = self.error.clone() {
-            self.error_window(ctx, &error);
-        }
+        drop(controller);
 
-        self.controller.check_for_new_message();
+        if let Some(error) = self.error.clone() {
+            self.error_window(ctx, error);
+        }
     }
 }
 
 impl GuiRunner {
-    fn new(controller: GameController) -> Self {
-        let (error_tx, error_rx) = mpsc::channel();
-
+    fn new(controller: Arc<Mutex<GameController>>) -> Self {
         GuiRunner {
             controller: controller,
             error: None,
-            error_tx: error_tx,
-            error_rx: error_rx,
             board_view: BoardView::new(),
             main_menu_view: MainMenuView::new(),
             game_end_view: GameEndView::new()
         }
     }
 
-    fn error_window(&mut self, ctx: &egui::Context, error: &String) {
+    fn error_window(&mut self, ctx: &egui::Context, error: String) {
         egui::Window::new("Connection Error").show(ctx, |ui| {
             ui.heading(error);
             ui.add_space(10.0);
 
             if ui.button("Go Back to Menu").clicked() {
                 self.error = None;
-                self.controller.restart_game();
+                self.controller.lock().unwrap().restart_game();
             }
 
             if ui.button("Ok").clicked() {

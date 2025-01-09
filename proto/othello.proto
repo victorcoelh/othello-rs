@@ -1,0 +1,35 @@
+syntax = "proto3";
+package othello_rpc;
+
+service Chat {
+    rpc SendMessage (ChatRequest) returns (Empty);
+}
+
+service Board {
+    rpc SetPiece (PieceRequest) returns (Empty);
+}
+
+service GameFlow {
+    rpc EndGame (EndRequest) returns (Empty);
+    rpc ChangeTurn (Empty) returns (Empty);
+    rpc UndoMove (Empty) returns (Empty);
+    rpc TestConnection (Empty) returns (Empty);
+    rpc ConnectTo (Empty) returns (Empty);
+}
+
+message ChatRequest {
+    string msg = 1;
+}
+
+message PieceRequest {
+    int32 rank = 1;
+    int32 file = 2;
+}
+
+message EndRequest {
+    bool game_won = 1;
+}
+
+message Empty {
+
+}
